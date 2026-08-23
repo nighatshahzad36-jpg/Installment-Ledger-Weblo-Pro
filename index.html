@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Installment Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5FC;
+    --paper:#FFFFFF;
+    --sidebar:#FFFFFF;
+    --tab:#EEF0FE;
+    --brown-dark:#1E2352;
+    --brown:#4F53D9;
+    --brown-mid:#6366F1;
+    --brown-light:#A5A9F5;
+    --accent:#4F53D9;
+    --accent-hover:#3F42B8;
+    --text:#1E2352;
+    --text-soft:#6B7094;
+    --border:#E3E5F5;
+    --border-soft:#ECEEFA;
+    --success:#0F9B8E;
+    --success-bg:#DDF5F1;
+    --danger:#DC4C4C;
+    --danger-bg:#FCE8E8;
+    --shadow: 0 2px 10px rgba(30,35,82,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{height:100%;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;color:var(--brown-dark);margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;}
+  input,select{font-family:'Inter',sans-serif;}
+  .hidden{display:none !important;}
+
+  /* ---------- AUTH: login = centered card, signup = full-screen split ---------- */
+  #authScreen{
+    height:100vh;width:100vw;display:flex;overflow:hidden;
+    background:radial-gradient(circle at 15% 20%, rgba(167,92,50,0.06), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(122,75,39,0.08), transparent 45%), var(--bg);
+  }
+  .auth-brand-panel{
+    display:none;
+    flex:1 1 46%;position:relative;overflow:hidden;
+    background:linear-gradient(155deg,var(--brown-dark) 0%, var(--brown) 55%, var(--accent) 100%);
+    flex-direction:column;justify-content:space-between;
+    padding:52px 54px;color:#fff;
+  }
+  #authScreen.signup-active{background:none;}
+  #authScreen.signup-active .auth-brand-panel{display:flex;}
+  .auth-brand-panel::before,.auth-brand-panel::after{
+    content:"";position:absolute;border-radius:50%;
+    background:rgba(255,255,255,0.06);
+  }
+  .auth-brand-panel::before{width:420px;height:420px;top:-140px;right:-140px;animation:floatSlow 12s ease-in-out infinite;}
+  .auth-brand-panel::after{width:280px;height:280px;bottom:-100px;left:-80px;animation:floatSlow 9s ease-in-out infinite reverse;}
+  @keyframes floatSlow{0%,100%{transform:translateY(0px);}50%{transform:translateY(-18px);}}
+  .auth-brand-top{position:relative;z-index:1;display:flex;align-items:center;gap:12px;}
+  .auth-brand-mark{width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.16);
+    display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:19px;backdrop-filter:blur(4px);}
+  .auth-brand-name{font-family:'Fraunces',serif;font-size:19px;font-weight:600;}
+  .auth-brand-sub{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.78;}
+  .auth-brand-mid{position:relative;z-index:1;max-width:420px;}
+  .auth-brand-mid h1{color:#fff;font-size:38px;line-height:1.2;font-weight:600;margin-bottom:16px;}
+  .auth-brand-mid p{font-size:14.5px;line-height:1.7;opacity:.85;margin:0;}
+  .auth-brand-foot{position:relative;z-index:1;font-size:11.5px;opacity:.65;}
+  .auth-form-panel{
+    flex:1 1 100%;display:flex;align-items:center;justify-content:center;
+    background:transparent;padding:24px;overflow-y:auto;
+  }
+  #authScreen.signup-active .auth-form-panel{flex:1 1 54%;background:var(--bg);}
+  .auth-card{
+    background:var(--paper);border:1px solid var(--border-soft);border-radius:16px;
+    box-shadow:0 10px 40px rgba(59,36,23,0.08);width:100%;max-width:400px;
+    padding:38px 36px 32px;position:relative;overflow:hidden;
+    animation:authCardIn .5s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes authCardIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .auth-eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brown-mid);font-weight:600;margin-bottom:6px;}
+  .auth-card h1{font-size:26px;font-weight:600;margin-bottom:6px;}
+  .auth-sub{color:var(--text-soft);font-size:13.5px;margin-bottom:26px;line-height:1.5;}
+  @media(max-width:820px){
+    #authScreen{flex-direction:column;height:auto;min-height:100vh;overflow:auto;}
+    .auth-brand-panel{flex:none;padding:36px 30px;min-height:220px;}
+    .auth-brand-mid h1{font-size:26px;}
+    #authScreen.signup-active .auth-form-panel{flex:none;padding:30px 20px 50px;}
+  }
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--brown);margin-bottom:6px;letter-spacing:.01em;}
+  .field input,.field select{
+    width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;
+    background:var(--bg);font-size:14px;color:var(--text);outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(168,92,50,0.14);}
+
+  /* stylish custom dropdown (replaces native <select> popups) */
+  .custom-select{position:relative;}
+  .custom-select-trigger{
+    width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;
+    background:var(--bg);font-size:14px;color:var(--text);text-align:left;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .custom-select-trigger:hover{border-color:var(--brown-mid);}
+  .custom-select.open .custom-select-trigger{border-color:var(--accent);box-shadow:0 0 0 3px rgba(168,92,50,0.14);}
+  .custom-select-arrow{transition:transform .2s ease;color:var(--text-soft);font-size:11px;flex-shrink:0;}
+  .custom-select.open .custom-select-arrow{transform:rotate(180deg);}
+  .custom-select-options{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;
+    background:var(--paper);border:1px solid var(--border);border-radius:10px;
+    box-shadow:0 12px 30px rgba(30,35,82,0.16);
+    max-height:0;overflow:hidden;opacity:0;pointer-events:none;
+    transform:translateY(-6px);
+    transition:max-height .22s ease, opacity .18s ease, transform .18s ease;
+    z-index:60;
+  }
+  .custom-select.open .custom-select-options{max-height:280px;opacity:1;transform:translateY(0);pointer-events:auto;overflow-y:auto;}
+  .custom-select-option{padding:11px 14px;font-size:13.5px;cursor:pointer;transition:background .12s ease;}
+  .custom-select-option:hover{background:var(--tab);}
+  .custom-select-option.selected{color:var(--accent);font-weight:600;background:var(--tab);}
+
+  /* compact Father/Husband toggle — one field strip */
+  .relation-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .relation-head label{margin-bottom:0;transition:color .15s ease;}
+  .relation-toggle{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px;flex-shrink:0;}
+  .rel-toggle-btn{
+    border:none;background:transparent;color:var(--text-soft);font-size:11.5px;font-weight:600;
+    padding:5px 12px;border-radius:16px;cursor:pointer;transition:background .15s ease, color .15s ease;
+  }
+  .rel-toggle-btn:hover{color:var(--text);}
+  .rel-toggle-btn.selected{background:var(--accent);color:#fff;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:8px;
+    padding:11px 18px;font-size:14px;font-weight:600;transition:background .15s, transform .12s, box-shadow .15s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary:hover{box-shadow:0 6px 16px rgba(168,92,50,0.28);}
+  .btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:6px;}
+  .btn-primary:hover{background:var(--accent-hover);}
+  .btn-outline{background:transparent;color:var(--brown);border:1px solid var(--border);}
+  .btn-outline:hover{background:var(--sidebar);}
+  .auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--text-soft);}
+  .auth-switch a{color:var(--accent);font-weight:600;text-decoration:none;cursor:pointer;}
+  .auth-switch a:hover{text-decoration:underline;}
+  .auth-error{background:var(--danger-bg);color:var(--danger);font-size:13px;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+  .sync-note{font-size:11.5px;color:var(--text-soft);text-align:center;margin-top:16px;line-height:1.5;}
+
+  /* ---------- APP LAYOUT ---------- */
+  #appScreen{display:none;min-height:100vh;position:relative;}
+  #appScreen.active{display:flex;}
+
+  .overlay-bg{position:fixed;inset:0;background:rgba(43,27,16,0.35);z-index:39;display:none;}
+  .overlay-bg.active{display:block;}
+
+  .sidebar{
+    width:290px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;height:100vh;position:sticky;top:0;
+    transition:margin-left .22s ease;
+  }
+  .sidebar-head{padding:20px 18px 14px;border-bottom:1px solid var(--border);}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .brand-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(155deg,var(--brown-dark),var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;
+    border:none;cursor:pointer;padding:0;transition:transform .15s ease, box-shadow .15s ease;}
+  .brand-mark:hover{transform:scale(1.05);box-shadow:0 4px 14px rgba(79,83,217,0.35);}
+  .brand-mark-bars{display:flex;flex-direction:column;gap:3px;}
+  .brand-mark-bars span{display:block;width:16px;height:2px;background:#fff;border-radius:1px;}
+  .brand-name{font-family:'Fraunces',serif;font-size:16.5px;font-weight:600;color:var(--brown-dark);line-height:1.15;}
+  .brand-sub{font-size:10.5px;color:var(--text-soft);letter-spacing:.06em;text-transform:uppercase;}
+  #newAccountBtn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 12px;
+    font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;}
+  #newAccountBtn:hover{background:var(--accent-hover);}
+  .sidebar-stats{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .sidebar-stat-box{background:var(--paper);border:1px solid var(--border);border-radius:9px;padding:9px 12px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;transition:box-shadow .15s ease;}
+  .sidebar-stat-box:hover{box-shadow:var(--shadow);}
+  .sidebar-stat-lbl{font-size:10.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+  .sidebar-stat-val{font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:700;color:var(--brown-dark);transition:color .2s ease;}
+  .sidebar-stat-val.good{color:var(--success);}
+  .sidebar-stat-val.warn{color:var(--accent);}
+  .search-wrap{padding:12px 18px 8px;}
+  .search-wrap input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--paper);font-size:13px;outline:none;}
+  .search-wrap input:focus{border-color:var(--accent);}
+  .filter-tabs{display:flex;gap:6px;padding:6px 18px 10px;}
+  .filter-tab{flex:1;text-align:center;padding:6px 4px;font-size:11.5px;font-weight:600;border-radius:6px;color:var(--text-soft);cursor:pointer;border:1px solid transparent;}
+  .filter-tab.active{background:var(--paper);color:var(--accent);border-color:var(--border);}
+  .khata-list{flex:1;overflow-y:auto;padding:6px 10px 16px;}
+  .khata-item{
+    display:flex;gap:10px;align-items:flex-start;padding:11px 10px;border-radius:9px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;
+    transition:background .15s ease, transform .15s ease; animation:fadeIn .3s ease both;
+  }
+  .khata-item:hover{background:var(--tab);transform:translateX(2px);}
+  .khata-item.selected{background:var(--paper);border-color:var(--border);box-shadow:var(--shadow);}
+  .khata-tab{width:5px;border-radius:3px;align-self:stretch;flex-shrink:0;background:var(--brown-light);}
+  .khata-item.status-closed .khata-tab{background:var(--success);}
+  .khata-info{min-width:0;flex:1;}
+  .khata-no{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--brown-mid);font-weight:600;letter-spacing:.02em;}
+  .khata-name{font-size:13.5px;font-weight:600;color:var(--text);margin:2px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .khata-meta{font-size:11px;color:var(--text-soft);display:flex;justify-content:space-between;gap:6px;}
+  .badge{font-size:9.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:20px;}
+  .badge-active{background:#F1E1CE;color:var(--accent);}
+  .badge-closed{background:var(--success-bg);color:var(--success);}
+  .sidebar-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .user-chip{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-soft);min-width:0;}
+  .user-dot{width:26px;height:26px;border-radius:50%;background:var(--brown);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+  #logoutBtn{background:none;border:none;color:var(--text-soft);font-size:12px;text-decoration:underline;flex-shrink:0;}
+  #logoutBtn:hover{color:var(--danger);}
+  .sidebar-foot-settings{padding:10px 18px 0;}
+  #changePasswordBtn{
+    width:100%;background:none;border:1px solid var(--border);color:var(--brown);
+    font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  #changePasswordBtn:hover{background:var(--tab);}
+
+  .main{flex:1;height:100vh;overflow-y:auto;min-width:0;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 30px;border-bottom:1px solid var(--border-soft);
+    background:var(--paper);position:sticky;top:0;z-index:5;gap:14px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+  .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .topbar h2{font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-sub{font-size:12.5px;color:var(--text-soft);margin-top:2px;}
+  .hamburger{
+    width:40px;height:40px;border-radius:9px;border:1px solid var(--border);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;gap:0;
+  }
+  .hamburger:hover{background:var(--sidebar);}
+  .hamburger span{display:block;width:18px;height:2px;background:var(--brown-dark);position:relative;}
+  .hamburger .bars{display:flex;flex-direction:column;gap:4px;}
+  .content{padding:26px 30px 60px;}
+
+  /* nav drawer (hamburger) — opens from LEFT, redesigned to match reference nav style */
+  .nav-drawer{
+    position:fixed;top:0;left:-320px;width:300px;height:100vh;background:var(--paper);
+    border-right:1px solid var(--border);z-index:40;box-shadow:8px 0 30px rgba(30,35,82,0.12);
+    transition:left .22s ease;display:flex;flex-direction:column;
+  }
+  .nav-drawer.active{left:0;}
+  .nav-drawer-head{padding:20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;}
+  .nav-drawer-head h3{font-size:16px;}
+  .nav-drawer-close{background:none;border:none;font-size:20px;color:var(--text-soft);}
+  .nav-drawer-body{padding:12px;flex:1;overflow-y:auto;}
+  .nav-drawer-item{
+    display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;cursor:pointer;
+    font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;
+    transition:background .15s ease; animation:drawerSlide .3s ease both;
+  }
+  .nav-drawer-item:hover{background:var(--tab);}
+  .nav-drawer-item.active{background:var(--tab);color:var(--brown);}
+  .nav-icon{
+    width:30px;height:30px;border-radius:8px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:14px;
+    background:var(--sidebar);border:1px solid var(--border-soft);
+  }
+  .nav-drawer-item.active .nav-icon{background:var(--brown);color:#fff;border-color:var(--brown);}
+  .nav-drawer-item.icon-amber .nav-icon{background:#FDECC8;color:#B8791A;border-color:#FDECC8;}
+  .nav-drawer-item.icon-teal .nav-icon{background:#D9F2EE;color:#0F8C7F;border-color:#D9F2EE;}
+  .nav-chevron{margin-left:auto;font-size:11px;color:var(--text-soft);transition:transform .2s ease;}
+  .nav-chevron.open{transform:rotate(180deg);}
+  .nav-sublist{max-height:0;overflow:hidden;transition:max-height .25s ease;padding-left:12px;}
+  .nav-sublist.open{max-height:360px;overflow-y:auto;margin-bottom:6px;}
+  .nav-sub-item{
+    padding:9px 12px 9px 34px;font-size:13px;color:var(--text-soft);border-radius:8px;cursor:pointer;
+    margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .nav-sub-item:hover{background:var(--tab);color:var(--text);}
+  .nav-sub-item.add{color:var(--accent);font-weight:700;}
+  .nav-sub-empty{padding:8px 12px 8px 34px;font-size:12px;color:var(--text-soft);font-style:italic;}
+
+
+  /* dashboard */
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes modalIn{from{opacity:0;transform:translateY(-10px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes drawerSlide{from{opacity:0;transform:translateX(8px);}to{opacity:1;transform:translateX(0);}}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:26px;}
+  .stat-card{
+    background:var(--paper);border:1px solid var(--border-soft);border-radius:14px;padding:18px 18px 16px;box-shadow:var(--shadow);
+    animation:fadeInUp .38s ease both;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .stat-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(30,35,82,0.12);}
+  .stat-grid .stat-card:nth-child(1){animation-delay:.02s;}
+  .stat-grid .stat-card:nth-child(2){animation-delay:.07s;}
+  .stat-grid .stat-card:nth-child(3){animation-delay:.12s;}
+  .stat-grid .stat-card:nth-child(4){animation-delay:.17s;}
+  .stat-grid .stat-card:nth-child(5){animation-delay:.22s;}
+  .stat-value{transition:color .2s ease;}
+  .stat-label{font-size:11.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+  .stat-value{font-family:'Fraunces',serif;font-size:26px;color:var(--brown-dark);margin-top:6px;font-weight:600;}
+  .stat-value.accent{color:var(--accent);}
+  .stat-value.good{color:var(--success);}
+  .stat-value.bad{color:var(--danger);}
+
+  /* colorful dashboard stat cards, matching the reference design */
+  .stat-card.c-navy{background:linear-gradient(135deg,#282C74,#3B3FA8);border:none;}
+  .stat-card.c-navy .stat-label{color:rgba(255,255,255,0.72);}
+  .stat-card.c-navy .stat-value{color:#fff;}
+  .stat-card.c-teal{background:linear-gradient(135deg,#0E8C80,#17B0A2);border:none;}
+  .stat-card.c-teal .stat-label{color:rgba(255,255,255,0.75);}
+  .stat-card.c-teal .stat-value{color:#fff;}
+  .stat-card.c-mint{background:#BFF0DA;border:none;}
+  .stat-card.c-mint .stat-label{color:#0F6B45;}
+  .stat-card.c-mint .stat-value{color:#0B5C3A;}
+  .stat-card.c-orange{background:linear-gradient(135deg,#F0A25C,#F3B37B);border:none;}
+  .stat-card.c-orange .stat-label{color:rgba(255,255,255,0.85);}
+  .stat-card.c-orange .stat-value{color:#fff;}
+  .stat-card.c-month{
+    background:var(--paper);border:1px solid var(--border-soft);border-left:4px solid var(--brown-mid);
+    cursor:pointer;padding-top:16px;
+  }
+  .stat-card.c-month:hover{box-shadow:0 10px 24px rgba(79,83,217,0.16);}
+  .stat-card.c-month .month-head{display:flex;align-items:center;justify-content:space-between;}
+  .stat-card.c-month .month-title{font-size:12.5px;font-weight:700;color:var(--text);}
+  .stat-card.c-month .month-chevron{transition:transform .2s ease;color:var(--brown-mid);font-size:13px;}
+  .stat-card.c-month.open .month-chevron{transform:rotate(180deg);}
+  .stat-card.c-month .month-sub{font-size:11px;color:var(--text-soft);margin-top:8px;}
+  .stat-card.c-month .month-total{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700;color:var(--brown-dark);margin-top:2px;}
+  .stat-card.c-month .month-pct{
+    display:inline-block;margin-top:8px;font-size:11px;font-weight:700;color:var(--success);
+    background:var(--success-bg);padding:2px 9px;border-radius:20px;
+  }
+  .stat-card.c-day{
+    background:var(--paper);border:1px solid var(--border-soft);border-left:4px solid var(--success);
+    cursor:pointer;padding-top:16px;
+  }
+  .stat-card.c-day:hover{box-shadow:0 10px 24px rgba(15,155,142,0.18);}
+  .stat-card.c-day .month-chevron{color:var(--success);}
+
+  /* month payment schedule panel */
+  .month-panel{overflow:hidden;max-height:0;transition:max-height .3s ease;}
+  .month-panel.open{max-height:2000px;}
+  .month-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:11px 4px;border-bottom:1px solid var(--border-soft);font-size:13px;cursor:pointer;
+  }
+  .month-row:hover{background:var(--bg);}
+  .month-row:last-child{border-bottom:none;}
+  .month-row-left{min-width:0;}
+  .month-row-name{font-weight:600;}
+  .month-row-meta{font-size:11.5px;color:var(--text-soft);}
+  .month-row-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+
+
+  .content{animation:fadeIn .28s ease both;}
+  .panel{
+    background:var(--paper);border:1px solid var(--border-soft);border-radius:12px;padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow);
+    animation:fadeInUp .4s ease both;animation-delay:.05s;
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+  .panel-head.schedule-head{cursor:pointer;user-select:none;transition:opacity .15s ease;}
+  .panel-head.schedule-head:hover{opacity:.8;}
+  .panel-head h3{font-size:15.5px;font-weight:600;}
+  .panel-sub{font-size:11.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin:18px 0 10px;}
+  .small-btn{background:var(--sidebar);border:1px solid var(--border);color:var(--brown);padding:6px 12px;border-radius:7px;font-size:12.5px;font-weight:600;transition:background .15s ease, transform .12s ease;}
+  .small-btn:hover{background:var(--tab);transform:translateY(-1px);}
+  .small-btn.danger{color:var(--danger);border-color:var(--danger-bg);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-soft);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);}
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--border-soft);}
+  tbody tr:hover{background:var(--bg);}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--text-soft);}
+  .empty-state .display{font-size:20px;margin-bottom:8px;color:var(--brown);}
+
+  /* account detail — mirrors paper ledger book */
+  .detail-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start;}
+  .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:13.5px;gap:10px;}
+  .info-row span:first-child{color:var(--text-soft);flex-shrink:0;}
+  .info-row span:last-child{font-weight:600;text-align:right;}
+  .info-row.stacked{flex-direction:column;gap:3px;}
+  .info-row.stacked span:last-child{text-align:left;font-weight:600;line-height:1.45;word-break:break-word;}
+  .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+  .fin-box{background:var(--bg);border:1px solid var(--border-soft);border-radius:9px;padding:12px 14px;}
+  .fin-box .lbl{font-size:11px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+  .fin-box .val{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--brown-dark);margin-top:4px;}
+  .fin-box.warn .val{color:var(--accent);}
+  .fin-box.good .val{color:var(--success);}
+
+  .paid-row td{color:var(--text-soft);}
+  .pay-input{width:90px;padding:5px 7px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;}
+  .pay-date{width:120px;padding:5px 7px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;}
+  .mini-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;}
+  .mini-btn:hover{background:var(--accent-hover);}
+  .mini-btn.unpaid-btn{background:var(--danger-bg);color:var(--danger);}
+  .mini-btn.unpaid-btn:hover{background:var(--danger);color:#fff;}
+  .mini-btn.pay-save-btn{background:var(--success);}
+  .mini-btn.pay-save-btn:hover{background:#0C8377;}
+  .status-pill{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;}
+  .status-pill.due{background:#F1E1CE;color:var(--accent);}
+  .status-pill.paid{background:var(--success-bg);color:var(--success);}
+  .status-pill.overdue{background:var(--danger-bg);color:var(--danger);}
+
+  /* modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(43,27,16,0.45);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:40px 20px;overflow-y:auto;}
+  .modal-overlay.active{display:flex;}
+  .modal{background:var(--paper);border-radius:14px;width:100%;max-width:640px;padding:28px 30px 26px;box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;animation:modalIn .28s cubic-bezier(.22,1,.36,1);}
+  .modal h3{font-size:19px;font-weight:600;margin-bottom:4px;}
+  .modal-sub{color:var(--text-soft);font-size:12.5px;margin-bottom:20px;}
+  .modal-section-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--brown-mid);margin:18px 0 10px;}
+  .modal-section-label:first-of-type{margin-top:0;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-grid .full{grid-column:1/-1;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+  .close-x{position:absolute;top:16px;right:18px;background:none;border:none;font-size:20px;color:var(--text-soft);}
+
+  /* stylish confirm/alert modal — decorative header band + medallion icon */
+  .confirm-overlay{align-items:center;background:rgba(30,35,82,0.5);backdrop-filter:blur(2px);}
+  .confirm-modal{
+    max-width:380px;text-align:center;padding:0;overflow:hidden;border-radius:20px;
+    animation:confirmPop .34s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 24px 60px rgba(30,35,82,0.35);
+  }
+  @keyframes confirmPop{
+    0%{opacity:0;transform:scale(.85) translateY(6px);}
+    60%{opacity:1;transform:scale(1.03) translateY(0);}
+    100%{opacity:1;transform:scale(1) translateY(0);}
+  }
+  .confirm-header{
+    position:relative;height:96px;overflow:hidden;
+    background:linear-gradient(135deg,var(--brown-dark) 0%, var(--brown-mid) 55%, var(--accent) 100%);
+  }
+  .confirm-modal.danger-mode .confirm-header{background:linear-gradient(135deg,#7A2B22 0%, #C24A38 55%, var(--danger) 100%);}
+  .confirm-modal.info-mode .confirm-header{background:linear-gradient(135deg,#0E5F55 0%, #0F9B8E 55%, #17B0A2 100%);}
+  .confirm-header-glow{
+    position:absolute;inset:0;
+    background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), transparent 55%),
+      radial-gradient(circle at 80% 75%, rgba(255,255,255,0.14), transparent 50%);
+    animation:confirmGlowDrift 4s ease-in-out infinite alternate;
+  }
+  @keyframes confirmGlowDrift{
+    0%{transform:translate(0,0) scale(1);}
+    100%{transform:translate(3%,-4%) scale(1.06);}
+  }
+  .confirm-icon{
+    width:66px;height:66px;border-radius:50%;
+    position:absolute;left:50%;bottom:-33px;transform:translateX(-50%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-size:27px;font-weight:700;
+    background:var(--paper);color:var(--brown);
+    border:4px solid var(--paper);
+    box-shadow:0 8px 20px rgba(30,35,82,0.28);
+    animation:confirmIconPulse .5s ease .15s both;
+  }
+  .confirm-modal.danger-mode .confirm-icon{color:var(--danger);}
+  .confirm-modal.info-mode .confirm-icon{color:var(--success);}
+  .confirm-modal.danger-mode #confirmModalYes{background:var(--danger);}
+  .confirm-modal.danger-mode #confirmModalYes:hover{background:#B93A3A;}
+  @keyframes confirmIconPulse{
+    0%{transform:translateX(-50%) scale(0.4);opacity:0;}
+    70%{transform:translateX(-50%) scale(1.15);opacity:1;}
+    100%{transform:translateX(-50%) scale(1);}
+  }
+  .confirm-body{padding:46px 30px 26px;}
+  .confirm-modal h3{font-size:18.5px;margin-bottom:9px;}
+  .confirm-message{white-space:pre-line;line-height:1.55;margin-bottom:6px;font-size:13px;}
+  .confirm-modal .modal-actions{margin-top:22px;gap:12px;}
+  .confirm-modal .btn{min-width:110px;padding:12px 20px;border-radius:24px;font-size:13.5px;}
+  .confirm-modal .btn-outline{background:var(--bg);}
+  .confirm-modal .btn-primary{box-shadow:0 6px 16px rgba(79,83,217,0.3);}
+  .confirm-modal.danger-mode .btn-primary{box-shadow:0 6px 16px rgba(220,76,76,0.32);}
+
+  /* business partner */
+  .partner-item{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid var(--border-soft);font-size:13.5px;cursor:pointer;}
+  .partner-item:last-child{border-bottom:none;}
+  .partner-item:hover{background:var(--bg);}
+  .partner-name{font-weight:600;}
+  .partner-meta{font-size:11.5px;color:var(--text-soft);}
+  .partner-count{background:var(--sidebar);color:var(--brown);font-weight:700;font-size:12px;padding:3px 10px;border-radius:20px;}
+  .txn-row.type-investment td:last-child{color:var(--success);font-weight:600;}
+  .txn-row.type-withdraw td:last-child{color:var(--danger);font-weight:600;}
+  .txn-type-badge{font-weight:700;font-size:12.5px;}
+  .txn-type-badge.investment{color:var(--success);}
+  .txn-type-badge.withdraw{color:var(--danger);}
+
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--brown);font-weight:600;cursor:pointer;margin-bottom:14px;}
+  .back-link:hover{text-decoration:underline;}
+
+  @media(max-width:900px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .detail-grid{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .sidebar{position:fixed;left:0;top:0;z-index:38;margin-left:-290px;}
+    .sidebar.mobile-open{margin-left:0;}
+    .content{padding:20px 16px 50px;}
+    .topbar{padding:14px 16px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ AUTH ============ -->
+<div id="authScreen">
+  <div class="auth-brand-panel">
+    <div class="auth-brand-top">
+      <div class="auth-brand-mark">IL</div>
+      <div>
+        <div class="auth-brand-name">Installment Ledger</div>
+        <div class="auth-brand-sub">Accounts Book</div>
+      </div>
+    </div>
+    <div class="auth-brand-mid">
+      <h1>Every account,<br>every installment,<br>in one place.</h1>
+      <p>Track customer ledgers, installment plans, and business partner investments — all from a single, simple book.</p>
+    </div>
+    <div class="auth-brand-foot">&copy; Installment Ledger</div>
+  </div>
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <div class="auth-eyebrow">Installment Ledger</div>
+      <div id="loginForm">
+        <h1>Sign in</h1>
+        <p class="auth-sub">Sign in to access your installment accounts.</p>
+        <div class="auth-error" id="loginError"></div>
+        <form autocomplete="on" onsubmit="event.preventDefault(); handleLogin();">
+          <div class="field"><label>Username</label><input id="loginUser" name="username" autocomplete="username" placeholder="e.g. usman.wain"></div>
+          <div class="field"><label>Password</label><input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </form>
+        <div class="auth-switch">New here? <a onclick="toggleAuth('signup')">Create an account</a></div>
+      </div>
+      <div id="signupForm" class="hidden">
+        <h1>Create account</h1>
+        <p class="auth-sub">Set up your business account to start managing ledgers.</p>
+        <div class="auth-error" id="signupError"></div>
+        <form autocomplete="on" onsubmit="event.preventDefault(); handleSignup();">
+          <div class="field"><label>Full name</label><input id="signupName" name="name" autocomplete="name" placeholder="e.g. Usman Wain"></div>
+          <div class="field"><label>Username</label><input id="signupUser" name="username" autocomplete="username" placeholder="Choose a username"></div>
+          <div class="field"><label>Password</label><input id="signupPass" name="new-password" type="password" autocomplete="new-password" placeholder="Choose a password"></div>
+          <button class="btn btn-primary" type="submit">Create account</button>
+        </form>
+        <div class="auth-switch">Already have an account? <a onclick="toggleAuth('login')">Sign in</a></div>
+      </div>
+      <div class="sync-note">Data is currently saved on this device/browser only.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="overlay-bg" id="overlayBg" onclick="closeAllOverlays()"></div>
+
+<div id="appScreen">
+  <aside class="sidebar" id="sidebarEl">
+    <div class="sidebar-head">
+      <div class="brand">
+        <button class="brand-mark" onclick="guardNavigation(openNavDrawer)" title="Sections">
+          <span class="brand-mark-bars"><span></span><span></span><span></span></span>
+        </button>
+        <div>
+          <div class="brand-name">Installment Ledger</div>
+          <div class="brand-sub">Accounts Book</div>
+        </div>
+      </div>
+      <button id="newAccountBtn" onclick="openAccountModal()">+ New Account</button>
+      <div class="sidebar-stats" id="sidebarStats">
+        <div class="sidebar-stat-box">
+          <div class="sidebar-stat-lbl">Collected Amount</div>
+          <div class="sidebar-stat-val good" id="statCollected">Rs 0</div>
+        </div>
+        <div class="sidebar-stat-box">
+          <div class="sidebar-stat-lbl">Outstanding Amount</div>
+          <div class="sidebar-stat-val warn" id="statOutstanding">Rs 0</div>
+        </div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <input id="searchBox" placeholder="Search by name or account no..." oninput="renderKhataList()">
+    </div>
+    <div class="filter-tabs">
+      <div class="filter-tab active" data-f="all" onclick="setFilter('all')">All</div>
+      <div class="filter-tab" data-f="active" onclick="setFilter('active')">Pending</div>
+      <div class="filter-tab" data-f="closed" onclick="setFilter('closed')">Closed</div>
+    </div>
+    <div class="khata-list" id="khataList"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div>
+          <h2 id="topTitle">Dashboard</h2>
+          <div class="topbar-sub" id="topSub">Summary of all accounts</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="hamburger" onclick="guardNavigation(openMobileSidebar)" title="Accounts" id="mobileSidebarBtn" style="display:none;">
+          <div class="bars"><span></span><span></span><span></span></div>
+        </button>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<!-- ============ NAV DRAWER (hamburger, opens from left) ============ -->
+<div class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-head">
+    <h3>Sections</h3>
+    <button class="nav-drawer-close" onclick="closeNavDrawer()">&times;</button>
+  </div>
+  <div class="nav-drawer-body" id="navDrawerBody"></div>
+  <div class="sidebar-foot-settings">
+    <button id="changePasswordBtn" onclick="guardNavigation(openAccountSettingsModal)">Change Password</button>
+  </div>
+  <div class="sidebar-foot">
+    <div class="user-chip">
+      <div class="user-dot" id="userDot">U</div>
+      <span id="userNameLabel">User</span>
+    </div>
+    <button id="logoutBtn" onclick="guardNavigation(handleLogout)">Logout</button>
+  </div>
+</div>
+
+<!-- ============ ACCOUNT SETTINGS MODAL (Change Password/Username/Name) ============ -->
+<div class="modal-overlay" id="accountSettingsOverlay">
+  <div class="modal" style="max-width:420px;">
+    <button class="close-x" onclick="closeAccountSettingsModal()">&times;</button>
+    <h3>Account Settings</h3>
+    <div class="modal-sub" id="asSubtitle">Verify your username to continue.</div>
+
+    <div id="asStepVerify">
+      <div class="field"><label>Username</label><input id="as_verify_username" placeholder="Type your username" autocomplete="username"></div>
+      <div class="auth-error" id="asVerifyError"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeAccountSettingsModal()">Cancel</button>
+        <button class="btn btn-primary" style="width:auto;" onclick="verifyAccountSettings()">Verify</button>
+      </div>
+    </div>
+
+    <div id="asStepChoose" class="hidden">
+      <div class="nav-drawer-item" onclick="showChangeForm('password')"><span class="nav-icon">&#128274;</span> Change Password</div>
+      <div class="nav-drawer-item" onclick="showChangeForm('username')"><span class="nav-icon">&#128100;</span> Change Username</div>
+      <div class="nav-drawer-item" onclick="showChangeForm('name')"><span class="nav-icon">&#9998;</span> Change Name</div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeAccountSettingsModal()">Close</button>
+      </div>
+    </div>
+
+    <div id="asStepForm" class="hidden">
+      <div class="field">
+        <label id="asFormLabel">New Password</label>
+        <input id="as_new_value" type="password" autocomplete="new-password">
+      </div>
+      <div class="field hidden" id="asConfirmWrap">
+        <label id="asConfirmLabel">Confirm Password</label>
+        <input id="as_confirm_value" type="password" autocomplete="new-password">
+      </div>
+      <div class="auth-error" id="asFormError"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="backToChoose()">Back</button>
+        <button class="btn btn-primary" style="width:auto;" onclick="saveAccountSetting()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ NEW ACCOUNT MODAL ============ -->
+<div class="modal-overlay" id="accountModalOverlay">
+  <div class="modal">
+    <button class="close-x" onclick="closeAccountModal()">&times;</button>
+    <h3>New Account</h3>
+    <div class="modal-sub">Enter customer and installment plan details, just like the ledger book.</div>
+
+    <div class="modal-section-label">Customer Detail</div>
+    <div class="form-grid">
+      <div class="field"><label>Account No</label><input id="f_accno"></div>
+      <div class="field"><label>Date</label><input id="f_date" type="date"></div>
+      <div class="field"><label>Customer Name</label><input id="f_name"></div>
+      <div class="field"><label>Care Of (C/O)</label><input id="f_careof" list="careofOptions" placeholder="e.g. Malik Javed Aura"><datalist id="careofOptions"></datalist></div>
+      <div class="field relation-field">
+        <div class="relation-head">
+          <label id="relationNameLabel">Father's / Husband's Name</label>
+          <div class="relation-toggle">
+            <button type="button" class="rel-toggle-btn" data-value="father" onclick="chooseRelationKind('father')">Father</button>
+            <button type="button" class="rel-toggle-btn" data-value="husband" onclick="chooseRelationKind('husband')">Husband</button>
+            <button type="button" class="rel-toggle-btn" data-value="others" onclick="chooseRelationKind('others')">Others</button>
+          </div>
+        </div>
+        <input id="f_relationcustom" class="hidden" placeholder="Write relation in English (e.g. Brother, Uncle)" style="margin-bottom:8px;">
+        <input id="f_relationname" list="relationOptions" placeholder="Select existing or type new">
+        <datalist id="relationOptions"></datalist>
+        <input type="hidden" id="f_relationkind" value="">
+      </div>
+      <div class="field"><label>ID Card No</label><input id="f_idcard"></div>
+      <div class="field"><label>Contact No</label><input id="f_contact"></div>
+      <div class="field full"><label>Address</label><input id="f_address"></div>
+    </div>
+
+    <div class="modal-section-label">Leasing Detail</div>
+    <div class="form-grid">
+      <div class="field full"><label>Product Detail</label><input id="f_product"></div>
+      <div class="field"><label>Number of Months</label><input id="f_months" type="number" min="1" value="12" oninput="recalcInstallment()"></div>
+      <div class="field"><label>Total Amount</label><input id="f_total" type="number" oninput="recalcInstallment()"></div>
+      <div class="field"><label>Down Payment</label><input id="f_down" type="number" oninput="recalcInstallment()"></div>
+      <div class="field"><label>Balance (auto)</label><input id="f_balance" type="number" readonly style="background:var(--bg);"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAccountModal()">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;" onclick="saveAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PARTNER MODAL ============ -->
+<div class="modal-overlay" id="partnerModalOverlay">
+  <div class="modal" style="max-width:460px;">
+    <button class="close-x" onclick="closePartnerModal()">&times;</button>
+    <h3>New Business Partner</h3>
+    <div class="modal-sub">Add a reference or business partner who brings in customers.</div>
+    <div class="field"><label>Name</label><input id="p_name"></div>
+    <div class="field"><label>Contact No</label><input id="p_contact"></div>
+    <div class="field"><label>Note</label><input id="p_note" placeholder="e.g. Sales Executive / Guarantor"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closePartnerModal()">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;" onclick="savePartner()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PARTNER TRANSACTION MODAL ============ -->
+<div class="modal-overlay" id="txnModalOverlay">
+  <div class="modal" style="max-width:440px;">
+    <button class="close-x" onclick="closeTxnModal()">&times;</button>
+    <h3 id="txnModalTitle">Add Transaction</h3>
+    <div class="modal-sub" id="txnModalSub">Record a transaction for this business partner.</div>
+    <div class="field"><label>Type</label>
+      <div class="custom-select" id="txnTypeSelect">
+        <button type="button" class="custom-select-trigger" onclick="toggleCustomSelect('txnType')">
+          <span id="txnTypeLabel">Investment</span>
+          <span class="custom-select-arrow">&#9662;</span>
+        </button>
+        <div class="custom-select-options" id="txnTypeOptions">
+          <div class="custom-select-option selected" data-value="investment" onclick="chooseTxnType('investment','Investment')">Investment</div>
+          <div class="custom-select-option" data-value="withdraw" onclick="chooseTxnType('withdraw','Withdraw (Paid to Partner)')">Withdraw (Paid to Partner)</div>
+        </div>
+      </div>
+      <input type="hidden" id="t_type" value="investment">
+    </div>
+    <div class="field"><label>Amount</label><input id="t_amount" type="number"></div>
+    <div class="field"><label>Date</label><input id="t_date" type="date"></div>
+    <div class="field"><label>Note</label><input id="t_note" placeholder="Optional note"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeTxnModal()">Cancel</button>
+      <button class="btn btn-primary" style="width:auto;" onclick="saveTxn()">Save Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STYLISH CONFIRM / ALERT MODAL ============ -->
+<div class="modal-overlay confirm-overlay" id="confirmModalOverlay">
+  <div class="modal confirm-modal" id="confirmModalBox">
+    <div class="confirm-header">
+      <div class="confirm-header-glow"></div>
+      <div class="confirm-icon" id="confirmModalIcon">!</div>
+    </div>
+    <div class="confirm-body">
+      <h3 id="confirmModalTitle">Please Confirm</h3>
+      <div class="modal-sub confirm-message" id="confirmModalMessage"></div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button class="btn btn-outline" id="confirmModalNo">No</button>
+        <button class="btn btn-primary" id="confirmModalYes" style="width:auto;">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ STYLISH CONFIRM / ALERT (replaces native confirm/alert) ============ */
+function showConfirm(message, opts={}){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('confirmModalOverlay');
+    const box = document.getElementById('confirmModalBox');
+    document.getElementById('confirmModalTitle').textContent = opts.title || 'Please Confirm';
+    document.getElementById('confirmModalMessage').textContent = message || '';
+    document.getElementById('confirmModalIcon').textContent = opts.alertOnly ? 'i' : (opts.danger ? '!' : '?');
+    box.classList.toggle('danger-mode', !!opts.danger);
+    box.classList.toggle('info-mode', !!opts.alertOnly && !opts.danger);
+    const yesBtn = document.getElementById('confirmModalYes');
+    const noBtn = document.getElementById('confirmModalNo');
+    noBtn.style.display = opts.alertOnly ? 'none' : 'inline-flex';
+    yesBtn.textContent = opts.alertOnly ? 'OK' : (opts.yesLabel || 'Yes');
+    noBtn.textContent = opts.noLabel || 'No';
+    overlay.classList.add('active');
+    function cleanup(result){
+      overlay.classList.remove('active');
+      yesBtn.onclick = null; noBtn.onclick = null; overlay.onclick = null;
+      resolve(result);
+    }
+    yesBtn.onclick = ()=>cleanup(true);
+    noBtn.onclick = ()=>cleanup(false);
+    overlay.onclick = (e)=>{ if(e.target===overlay && !opts.alertOnly && !opts.preventOutsideClose) cleanup(false); };
+  });
+}
+function showAlert(message, opts={}){
+  return showConfirm(message, {...opts, alertOnly:true, title: opts.title || 'Notice'});
+}
+
+/* ============ SNAPSHOT-BASED LEAVE GUARD ============ */
+// Due Date and Amount Due auto-save to storage the instant they're edited.
+// accountSnapshot holds a deep copy of the account's installments exactly
+// as they were when this account page was first opened, so if the person
+// picks "Unsave" when leaving, we restore storage to that snapshot —
+// and always re-render the account page itself right away, so the revert
+// is visible immediately even if the button that triggered the guard only
+// opens a menu/overlay rather than actually navigating away.
+let accountDirty = false;
+let accountSnapshot = null;
+let accountSnapshotId = null;
+let changedFieldsSet = new Set();
+function markFieldDirty(label){
+  accountDirty = true;
+  changedFieldsSet.add(label);
+}
+async function guardNavigation(actionFn){
+  if(accountDirty && currentView==='account'){
+    const fieldsList = Array.from(changedFieldsSet).join(', ') || 'this installment plan';
+    const keep = await showConfirm(
+      `You changed: ${fieldsList}.\nSave these changes, or leave them unsaved?`,
+      {title:'Save your changes?', yesLabel:'Save', noLabel:'Unsave', preventOutsideClose:true}
+    );
+    if(!keep) revertAccountSnapshot();
+  }
+  accountDirty = false;
+  changedFieldsSet = new Set();
+  actionFn();
+}
+function revertAccountSnapshot(){
+  if(!accountSnapshotId || !accountSnapshot) return;
+  const accs = getAccounts();
+  const acc = accs.find(a=>a.id===accountSnapshotId);
+  if(acc){
+    acc.installments = JSON.parse(JSON.stringify(accountSnapshot));
+    setAccounts(accs);
+    renderKhataList();
+    // Re-render the account page right now (before actionFn runs), so the
+    // revert is visible even when actionFn only opens a menu/sidebar and
+    // doesn't itself re-render this page.
+    if(currentView==='account' && selectedAccountId===accountSnapshotId){
+      openAccount(accountSnapshotId);
+    }
+  }
+}
+
+/* ============ CLOUD API (Netlify Function + Blobs) ============ */
+const API_BASE = '/api/ledger';
+async function apiCall(action, payload={}){
+  const res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action, ...payload })
+  });
+  let data = {};
+  try { data = await res.json(); } catch(e){ /* ignore */ }
+  if(!res.ok){ throw new Error(data.error || 'Something went wrong. Please try again.'); }
+  return data;
+}
+
+/* ============ STORAGE HELPERS ============ */
+// Session + "remember my username" stay on THIS device only (that's the point
+// of them). Everything else — users, accounts, business partners — now lives
+// on the server via apiCall(), so it's the same across every device.
+const DB = {
+  session: () => localStorage.getItem('il_session'),
+  setSession: (u) => localStorage.setItem('il_session', u),
+  clearSession: () => localStorage.removeItem('il_session'),
+  lastUsername: () => localStorage.getItem('il_last_username'),
+  setLastUsername: (u) => localStorage.setItem('il_last_username', u),
+};
+
+let currentUser = null;
+let currentFilter = 'all';
+let selectedAccountId = null;
+let selectedPartnerId = null;
+let currentView = 'dashboard';
+
+/* ============ AUTH ============ */
+function toggleAuth(which){
+  document.getElementById('loginForm').classList.toggle('hidden', which==='signup');
+  document.getElementById('signupForm').classList.toggle('hidden', which==='login');
+  document.getElementById('authScreen').classList.toggle('signup-active', which==='signup');
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('signupError').style.display='none';
+}
+function showAuthError(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display='block';
+}
+async function handleSignup(){
+  const name = document.getElementById('signupName').value.trim();
+  const user = document.getElementById('signupUser').value.trim();
+  const pass = document.getElementById('signupPass').value;
+  if(!name || !user || !pass){ showAuthError('signupError','Please fill in all fields.'); return; }
+  try{
+    await apiCall('signup', {username:user, password:pass, name});
+    DB.setSession(user);
+    DB.setLastUsername(user);
+    await bootApp(user);
+  } catch(e){
+    showAuthError('signupError', e.message);
+  }
+}
+async function handleLogin(){
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!user || !pass){ showAuthError('loginError','Please enter your username and password.'); return; }
+  try{
+    await apiCall('login', {username:user, password:pass});
+    DB.setSession(user);
+    DB.setLastUsername(user);
+    await bootApp(user);
+  } catch(e){
+    showAuthError('loginError', e.message);
+  }
+}
+function prefillLoginUsername(){
+  const last = DB.lastUsername();
+  const userEl = document.getElementById('loginUser');
+  const passEl = document.getElementById('loginPass');
+  if(last){
+    userEl.value = last;
+    setTimeout(()=>passEl.focus(), 50);
+  }
+}
+function handleLogout(){
+  DB.clearSession();
+  currentUser = null;
+  _accountsCache = [];
+  _partnersCache = [];
+  closeAllOverlays();
+  document.getElementById('appScreen').classList.remove('active');
+  document.getElementById('authScreen').style.display='flex';
+  toggleAuth('login');
+  document.getElementById('loginPass').value='';
+  prefillLoginUsername();
+}
+
+/* ============ ACCOUNT SETTINGS (Change Password / Username / Name) ============ */
+let asCurrentAction = null;
+function openAccountSettingsModal(){
+  document.getElementById('asStepVerify').classList.remove('hidden');
+  document.getElementById('asStepChoose').classList.add('hidden');
+  document.getElementById('asStepForm').classList.add('hidden');
+  document.getElementById('asSubtitle').textContent = 'Verify your username to continue.';
+  document.getElementById('as_verify_username').value='';
+  document.getElementById('asVerifyError').style.display='none';
+  document.getElementById('accountSettingsOverlay').classList.add('active');
+}
+function closeAccountSettingsModal(){
+  document.getElementById('accountSettingsOverlay').classList.remove('active');
+}
+function verifyAccountSettings(){
+  const typed = document.getElementById('as_verify_username').value.trim();
+  const errEl = document.getElementById('asVerifyError');
+  if(!typed || typed.toLowerCase() !== currentUser.username.toLowerCase()){
+    errEl.textContent = 'That username does not match your account. Please try again.';
+    errEl.style.display='block';
+    return;
+  }
+  errEl.style.display='none';
+  document.getElementById('asStepVerify').classList.add('hidden');
+  document.getElementById('asStepChoose').classList.remove('hidden');
+  document.getElementById('asSubtitle').textContent = 'What would you like to change?';
+}
+function showChangeForm(action){
+  asCurrentAction = action;
+  document.getElementById('asStepChoose').classList.add('hidden');
+  document.getElementById('asStepForm').classList.remove('hidden');
+  document.getElementById('as_new_value').value='';
+  document.getElementById('as_confirm_value').value='';
+  document.getElementById('asFormError').style.display='none';
+  const label = document.getElementById('asFormLabel');
+  const input = document.getElementById('as_new_value');
+  const confirmWrap = document.getElementById('asConfirmWrap');
+  const confirmLabel = document.getElementById('asConfirmLabel');
+  const confirmInput = document.getElementById('as_confirm_value');
+  confirmWrap.classList.remove('hidden');
+  if(action==='password'){
+    label.textContent='New Password'; input.type='password'; input.autocomplete='new-password';
+    confirmLabel.textContent='Confirm Password'; confirmInput.type='password'; confirmInput.autocomplete='new-password';
+    document.getElementById('asSubtitle').textContent='Change Password';
+  } else if(action==='username'){
+    label.textContent='New Username'; input.type='text'; input.autocomplete='username';
+    confirmLabel.textContent='Confirm Username'; confirmInput.type='text'; confirmInput.autocomplete='username';
+    input.value = currentUser.username;
+    document.getElementById('asSubtitle').textContent='Change Username';
+  } else {
+    label.textContent='New Name'; input.type='text'; input.autocomplete='name';
+    confirmLabel.textContent='Confirm Name'; confirmInput.type='text'; confirmInput.autocomplete='name';
+    input.value = currentUser.name || '';
+    document.getElementById('asSubtitle').textContent='Change Name';
+  }
+}
+function backToChoose(){
+  document.getElementById('asStepForm').classList.add('hidden');
+  document.getElementById('asStepChoose').classList.remove('hidden');
+  document.getElementById('asSubtitle').textContent = 'What would you like to change?';
+}
+async function saveAccountSetting(){
+  const val = document.getElementById('as_new_value').value.trim();
+  const confirmVal = document.getElementById('as_confirm_value').value.trim();
+  const errEl = document.getElementById('asFormError');
+  errEl.style.display='none';
+  if(!val){ errEl.textContent='This field cannot be empty.'; errEl.style.display='block'; return; }
+  const mismatchLabel = {password:'Passwords', username:'Usernames', name:'Names'}[asCurrentAction];
+  if(val !== confirmVal){ errEl.textContent=`${mismatchLabel} do not match.`; errEl.style.display='block'; return; }
+
+  const updates = {};
+  if(asCurrentAction==='password') updates.password = val;
+  else if(asCurrentAction==='username') updates.username = val;
+  else updates.name = val;
+
+  try{
+    const res = await apiCall('updateUser', {username: currentUser.username, updates});
+    currentUser = res.user;
+    if(updates.username){
+      DB.setSession(currentUser.username);
+      DB.setLastUsername(currentUser.username);
+    }
+    document.getElementById('userNameLabel').textContent = currentUser.name || currentUser.username;
+    document.getElementById('userDot').textContent = (currentUser.name||currentUser.username).charAt(0).toUpperCase();
+    closeAccountSettingsModal();
+    const labelMap = {password:'Password', username:'Username', name:'Name'};
+    await showAlert(`Your ${labelMap[asCurrentAction]} has been updated.`, {title:'Saved!'});
+  } catch(e){
+    errEl.textContent = e.message;
+    errEl.style.display='block';
+  }
+}
+async function bootApp(username){
+  try{
+    const sessRes = await apiCall('session', {username});
+    currentUser = sessRes.user;
+  } catch(e){
+    // Server no longer recognizes this user (e.g. cleared data) — bounce back to login.
+    DB.clearSession();
+    document.getElementById('authScreen').style.display='flex';
+    prefillLoginUsername();
+    return;
+  }
+  const dataRes = await apiCall('getData', {username: currentUser.username});
+  _accountsCache = dataRes.accounts || [];
+  _partnersCache = dataRes.partners || [];
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').classList.add('active');
+  document.getElementById('userNameLabel').textContent = currentUser.name || currentUser.username;
+  document.getElementById('userDot').textContent = (currentUser.name||currentUser.username).charAt(0).toUpperCase();
+  document.getElementById('mobileSidebarBtn').style.display = window.innerWidth<=900 ? 'flex':'none';
+  refreshPartnerOptions();
+  showDashboard();
+}
+
+/* ============ MOBILE SIDEBAR / DRAWER ============ */
+function openMobileSidebar(){
+  document.getElementById('sidebarEl').classList.add('mobile-open');
+  document.getElementById('overlayBg').classList.add('active');
+}
+let drawerAccountsOpen = false;
+let drawerPartnersOpen = false;
+let suppressDrawerClose = false;
+function openNavDrawer(){
+  renderNavDrawer();
+  document.getElementById('navDrawer').classList.add('active');
+  document.getElementById('overlayBg').classList.add('active');
+}
+function closeNavDrawer(){ document.getElementById('navDrawer').classList.remove('active'); document.getElementById('overlayBg').classList.remove('active'); }
+function closeAllOverlays(){
+  document.getElementById('sidebarEl').classList.remove('mobile-open');
+  if(!suppressDrawerClose){
+    document.getElementById('navDrawer').classList.remove('active');
+    document.getElementById('overlayBg').classList.remove('active');
+  }
+}
+function toggleDrawerAccounts(){
+  drawerAccountsOpen = !drawerAccountsOpen;
+  suppressDrawerClose = true;
+  showDashboard();
+  suppressDrawerClose = false;
+  renderNavDrawer();
+  document.getElementById('navDrawer').classList.add('active');
+  document.getElementById('overlayBg').classList.add('active');
+}
+function toggleDrawerPartners(){
+  drawerPartnersOpen = !drawerPartnersOpen;
+  suppressDrawerClose = true;
+  showPartners();
+  suppressDrawerClose = false;
+  renderNavDrawer();
+  document.getElementById('navDrawer').classList.add('active');
+  document.getElementById('overlayBg').classList.add('active');
+}
+function renderNavDrawer(){
+  const body = document.getElementById('navDrawerBody');
+  if(!body || !currentUser) return;
+  const partners = getVisiblePartners();
+  body.innerHTML = `
+    <div class="nav-drawer-item ${currentView==='dashboard'?'active':''}" onclick="showDashboard(); closeNavDrawer();">
+      <span class="nav-icon">&#8962;</span> Dashboard
+    </div>
+    <div class="nav-drawer-item icon-amber" onclick="toggleDrawerAccounts()">
+      <span class="nav-icon">&#128193;</span> All Accounts
+      <span class="nav-chevron ${drawerAccountsOpen?'open':''}">&#9662;</span>
+    </div>
+    <div class="nav-sublist ${drawerAccountsOpen?'open':''}">
+      <div class="nav-sub-item add" onclick="openAccountModal(); closeNavDrawer();">+ Add New Account</div>
+    </div>
+    <div class="nav-drawer-item icon-teal ${currentView==='partners'||currentView==='partnerDetail'?'active':''}" onclick="toggleDrawerPartners()">
+      <span class="nav-icon">&#129309;</span> Business Partners
+      <span class="nav-chevron ${drawerPartnersOpen?'open':''}">&#9662;</span>
+    </div>
+    <div class="nav-sublist ${drawerPartnersOpen?'open':''}">
+      ${partners.length? partners.map(p=>`<div class="nav-sub-item" onclick="openPartner('${p.id}'); closeNavDrawer();">${escapeHtml(p.name)}</div>`).join('') : `<div class="nav-sub-empty">No partners yet</div>`}
+      <div class="nav-sub-item add" onclick="openPartnerModal(); closeNavDrawer();">+ Add Business Partner</div>
+    </div>
+  `;
+}
+window.addEventListener('resize', ()=>{
+  document.getElementById('mobileSidebarBtn').style.display = window.innerWidth<=900 ? 'flex':'none';
+});
+
+/* ============ ACCOUNT HELPERS ============ */
+// In-memory copies of the signed-in user's data, loaded once at login and
+// kept in sync with the server on every write. Every other function in this
+// app calls getAccounts()/setAccounts()/getPartners()/setPartners() — by
+// keeping these synchronous, none of that code needs to change; only the
+// sync-to-cloud part happens here, in the background.
+let _accountsCache = [];
+let _partnersCache = [];
+function getAccounts(){ return _accountsCache; }
+function setAccounts(list){ _accountsCache = list; syncUserData(); }
+function getPartners(){ return _partnersCache; }
+function setPartners(list){ _partnersCache = list; syncUserData(); }
+function syncUserData(){
+  if(!currentUser) return;
+  apiCall('saveData', {username: currentUser.username, accounts:_accountsCache, partners:_partnersCache})
+    .catch(err=>console.error('Cloud sync failed:', err));
+}
+// "Visible" lists exclude soft-deleted records (used for lists/UI).
+// Financial totals (globalTotals, partnerCombinedTotals) intentionally use the
+// FULL unfiltered lists so deleting an account/partner never changes any
+// payment, outstanding, collected, investment, or withdraw figure.
+function getVisibleAccounts(){ return getAccounts().filter(a=>!a.deleted); }
+function getVisiblePartners(){ return getPartners().filter(p=>!p.deleted); }
+
+function accountBalance(acc){ return acc.installments.reduce((sum,i)=> sum + (i.amountDue - (i.amountReceived||0)), 0); }
+function accountReceived(acc){ return acc.installments.reduce((sum,i)=> sum + (i.amountReceived||0), 0) + Number(acc.downPayment||0); }
+function isAccountClosed(acc){ return accountBalance(acc) <= 0; }
+function nextDueInstallment(acc){
+  return acc.installments.find(i => (i.amountReceived||0) < i.amountDue) || null;
+}
+function thisMonthInstallments(){
+  const now = new Date();
+  const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const accs = getVisibleAccounts();
+  let allRows = [];
+  accs.forEach(acc=>{
+    acc.installments.forEach((inst, idx)=>{
+      if(inst.dueDate && inst.dueDate.slice(0,7)===ym){
+        allRows.push({acc, inst, idx});
+      }
+    });
+  });
+  const totalDueAll = allRows.reduce((s,r)=> s + r.inst.amountDue, 0);
+  const totalReceivedAll = allRows.reduce((s,r)=> s + Math.min(r.inst.amountReceived||0, r.inst.amountDue), 0);
+  const pct = totalDueAll>0 ? Math.round((totalReceivedAll/totalDueAll)*100) : 0;
+
+  // Only due/overdue (unpaid) installments are counted and listed —
+  // already-paid ones for the month are excluded.
+  let rows = allRows.filter(r => (r.inst.amountReceived||0) < r.inst.amountDue);
+  rows.sort((a,b)=> (a.inst.dueDate||'').localeCompare(b.inst.dueDate||''));
+  const totalDue = rows.reduce((s,r)=> s + (r.inst.amountDue - (r.inst.amountReceived||0)), 0);
+
+  return { rows, totalDue, totalReceived: totalReceivedAll, pct, monthLabel: now.toLocaleString('en-US',{month:'long',year:'numeric'}) };
+}
+let monthPanelOpen = false;
+function toggleMonthPanel(){
+  monthPanelOpen = !monthPanelOpen;
+  const card = document.getElementById('monthCard');
+  const panel = document.getElementById('monthPanel');
+  const chevron = document.getElementById('scheduleChevron');
+  if(card) card.classList.toggle('open', monthPanelOpen);
+  if(panel) panel.classList.toggle('open', monthPanelOpen);
+  if(chevron) chevron.classList.toggle('open', monthPanelOpen);
+}
+
+function todayCollections(){
+  const todayStr = new Date().toISOString().slice(0,10);
+  const accs = getVisibleAccounts();
+  let rows = [];
+  accs.forEach(acc=>{
+    acc.installments.forEach((inst, idx)=>{
+      if(inst.receiptDate === todayStr && (inst.amountReceived||0) > 0){
+        rows.push({acc, inst, idx});
+      }
+    });
+  });
+  rows.sort((a,b)=> (b.acc.name||'').localeCompare(a.acc.name||''));
+  const total = rows.reduce((s,r)=> s + Number(r.inst.amountReceived||0), 0);
+  const dateLabel = new Date().toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'});
+  return { rows, total, dateLabel };
+}
+let dayPanelOpen = false;
+function toggleDayPanel(){
+  dayPanelOpen = !dayPanelOpen;
+  const card = document.getElementById('dayCard');
+  const panel = document.getElementById('dayPanel');
+  const chevron = document.getElementById('dayScheduleChevron');
+  if(card) card.classList.toggle('open', dayPanelOpen);
+  if(panel) panel.classList.toggle('open', dayPanelOpen);
+  if(chevron) chevron.classList.toggle('open', dayPanelOpen);
+}
+
+function partnerTotals(p){
+  const txns = p.transactions||[];
+  const investment = txns.filter(t=>t.type==='investment').reduce((s,t)=>s+Number(t.amount),0);
+  const withdraw = txns.filter(t=>t.type==='withdraw').reduce((s,t)=>s+Number(t.amount),0);
+  const balance = investment - withdraw;
+  return {investment, withdraw, balance};
+}
+
+function globalTotals(){
+  const accs = getAccounts();
+  const partners = getPartners();
+  let collected = accs.reduce((s,a)=> s + accountReceived(a), 0);
+  let outstanding = accs.reduce((s,a)=> s + accountBalance(a), 0);
+  partners.forEach(p=>{
+    const t = partnerTotals(p);
+    collected += t.investment;   // partner investment adds to money collected
+    collected -= t.withdraw;     // partner withdrawal (incl. auto-deducted account funding) reduces money collected
+  });
+  return { collected: Math.max(collected,0), outstanding: Math.max(outstanding,0) };
+}
+function partnerCombinedTotals(){
+  const partners = getPartners();
+  let investment=0, withdraw=0;
+  partners.forEach(p=>{
+    const t = partnerTotals(p);
+    investment += t.investment;
+    withdraw += t.withdraw;
+  });
+  return { investment, withdraw };
+}
+function renderSidebarStats(){
+  const { collected, outstanding } = globalTotals();
+  const cEl = document.getElementById('statCollected');
+  const oEl = document.getElementById('statOutstanding');
+  if(cEl) cEl.textContent = 'Rs ' + numFmt(collected);
+  if(oEl) oEl.textContent = 'Rs ' + numFmt(outstanding);
+}
+
+/* ============ SIDEBAR / LIST ============ */
+function setFilter(f){
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.toggle('active', t.dataset.f===f));
+  renderKhataList();
+}
+function renderKhataList(){
+  renderSidebarStats();
+  const list = document.getElementById('khataList');
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  let accs = getVisibleAccounts();
+  accs = accs.map(a=>({...a, _closed:isAccountClosed(a), _balance:accountBalance(a)}));
+  if(currentFilter==='active') accs = accs.filter(a=>!a._closed);
+  if(currentFilter==='closed') accs = accs.filter(a=>a._closed);
+  if(q) accs = accs.filter(a=> a.name.toLowerCase().includes(q) || String(a.accno).toLowerCase().includes(q));
+  accs.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+
+  if(accs.length===0){
+    list.innerHTML = `<div class="empty-state" style="padding:30px 10px;"><div class="display">No accounts</div><div style="font-size:12.5px;">Create a new account from above.</div></div>`;
+    return;
+  }
+  list.innerHTML = accs.map(a=>`
+    <div class="khata-item ${a._closed?'status-closed':''} ${selectedAccountId===a.id?'selected':''}" onclick="guardNavigation(()=>openAccount('${a.id}'))">
+      <div class="khata-tab"></div>
+      <div class="khata-info">
+        <div class="khata-no">ACCOUNT #${a.accno}</div>
+        <div class="khata-name">${escapeHtml(a.name)}</div>
+        <div class="khata-meta">
+          <span>${a._closed? 'Balance: NIL' : 'Due: Rs '+numFmt(a._balance)}</span>
+          <span class="badge ${a._closed?'badge-closed':'badge-active'}">${a._closed?'Closed':'Active'}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function numFmt(n){ n = Math.round(Number(n)||0); return n.toLocaleString('en-PK'); }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ============ NAV / VIEWS ============ */
+function setActiveDrawerItem(id){
+  // Active state for the nav drawer is now computed inside renderNavDrawer() based on currentView.
+}
+
+function showDashboard(){
+  currentView='dashboard'; selectedAccountId=null;
+  closeAllOverlays();
+  monthPanelOpen = false;
+  dayPanelOpen = false;
+  setActiveDrawerItem('drawer_dash');
+  document.getElementById('topTitle').textContent='Dashboard';
+  document.getElementById('topSub').textContent='Summary of all accounts';
+  renderKhataList();
+
+  const accs = getVisibleAccounts();
+  const total = accs.length;
+  const closed = accs.filter(isAccountClosed).length;
+  const active = total-closed;
+  const { collected, outstanding } = globalTotals();
+  const partners = getVisiblePartners();
+  const acctCreatedAt = a => a.createdAt || (Number((a.id||'').replace('acc_',''))||0);
+  const recentAccs = [...accs].sort((a,b)=> acctCreatedAt(b) - acctCreatedAt(a)).slice(0,6);
+  const month = thisMonthInstallments();
+  const today = todayCollections();
+
+  document.getElementById('content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card c-navy"><div class="stat-label">Total Accounts</div><div class="stat-value">${total}</div></div>
+      <div class="stat-card c-teal"><div class="stat-label">Pending (Active)</div><div class="stat-value">${active}</div></div>
+      <div class="stat-card c-mint"><div class="stat-label">Closed</div><div class="stat-value">${closed}</div></div>
+      <div class="stat-card c-orange"><div class="stat-label">Total Outstanding</div><div class="stat-value">Rs ${numFmt(outstanding)}</div></div>
+      <div class="stat-card c-day" id="dayCard" onclick="toggleDayPanel()">
+        <div class="month-head">
+          <div class="month-title">Daily Collection</div>
+          <span class="month-chevron">&#9662;</span>
+        </div>
+        <div class="month-sub">${today.rows.length} payment${today.rows.length===1?'':'s'} today · ${today.dateLabel}</div>
+        <div class="month-total">Rs ${numFmt(today.total)}</div>
+      </div>
+      <div class="stat-card c-month" id="monthCard" onclick="toggleMonthPanel()">
+        <div class="month-head">
+          <div class="month-title">Payments this Month</div>
+          <span class="month-chevron">&#9662;</span>
+        </div>
+        <div class="month-sub">${month.rows.length} payment${month.rows.length===1?'':'s'} due · ${month.monthLabel}</div>
+        <div class="month-total">Rs ${numFmt(month.totalDue)}</div>
+        <span class="month-pct">${month.pct}% collected</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head schedule-head" id="dayPanelHead" onclick="toggleDayPanel()">
+        <h3>Total Collection Today</h3>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:12px;color:var(--text-soft);">Rs ${numFmt(today.total)} · ${today.dateLabel}</span>
+          <span class="month-chevron" id="dayScheduleChevron">&#9662;</span>
+        </span>
+      </div>
+      <div class="month-panel" id="dayPanel">
+        ${today.rows.length===0 ? `
+        <div class="empty-state" style="padding:34px 20px;">
+          <div class="display">No collections yet today</div>
+          <div style="font-size:12.5px;">Payments received today will show up here.</div>
+        </div>` : today.rows.map(r=>`
+          <div class="month-row" onclick="openAccount('${r.acc.id}')">
+            <div class="month-row-left">
+              <div class="month-row-name">${escapeHtml(r.acc.name)} <span class="mono" style="font-weight:400;color:var(--text-soft);">#${r.acc.accno}</span></div>
+              <div class="month-row-meta">${escapeHtml(r.acc.product||'')}</div>
+            </div>
+            <div class="month-row-right">
+              <span class="mono">Rs ${numFmt(r.inst.amountReceived)}</span>
+              <span class="status-pill paid">Paid</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head schedule-head" id="schedulePanelHead" onclick="toggleMonthPanel()">
+        <h3>Payment Schedule — This Month</h3>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:12px;color:var(--text-soft);">Received: Rs ${numFmt(month.totalReceived)} · Still due: Rs ${numFmt(month.totalDue)}</span>
+          <span class="month-chevron" id="scheduleChevron">&#9662;</span>
+        </span>
+      </div>
+      <div class="month-panel" id="monthPanel">
+        ${month.rows.length===0 ? `
+        <div class="empty-state" style="padding:34px 20px;">
+          <div class="display" style="color:var(--success);">All installments were collected</div>
+          <div style="font-size:12.5px;">No due or overdue payments left for ${month.monthLabel}.</div>
+        </div>` : month.rows.map(r=>{
+          const overdue = new Date(r.inst.dueDate) < new Date();
+          const remaining = r.inst.amountDue - (r.inst.amountReceived||0);
+          return `
+          <div class="month-row" onclick="openAccount('${r.acc.id}')">
+            <div class="month-row-left">
+              <div class="month-row-name">${escapeHtml(r.acc.name)} <span class="mono" style="font-weight:400;color:var(--text-soft);">#${r.acc.accno}</span></div>
+              <div class="month-row-meta">Due ${r.inst.dueDate} · ${escapeHtml(r.acc.product||'')}</div>
+            </div>
+            <div class="month-row-right">
+              <span class="mono">Rs ${numFmt(remaining)}</span>
+              <span class="status-pill ${overdue?'overdue':'due'}">${overdue?'Overdue':'Due'}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Recent Accounts and Installment Plan</h3><span style="font-size:12px;color:var(--text-soft);">Total collected: Rs ${numFmt(collected)}</span></div>
+      ${recentAccs.length? `
+      <table>
+        <thead><tr><th>Account No</th><th>Name</th><th>Product</th><th>Total Amount</th><th>Balance Due</th><th>Due Date</th><th>Installment Due</th><th>Status</th></tr></thead>
+        <tbody>
+        ${recentAccs.map(a=>{
+          const next = nextDueInstallment(a);
+          return `
+          <tr style="cursor:pointer" onclick="openAccount('${a.id}')">
+            <td class="mono">#${a.accno}</td>
+            <td>${escapeHtml(a.name)}</td>
+            <td>${escapeHtml(a.product)}</td>
+            <td class="mono">Rs ${numFmt(a.total)}</td>
+            <td class="mono">Rs ${numFmt(accountBalance(a))}</td>
+            <td class="mono">${next? next.dueDate : '-'}</td>
+            <td class="mono">${next? 'Rs '+numFmt(next.amountDue) : '-'}</td>
+            <td><span class="badge ${isAccountClosed(a)?'badge-closed':'badge-active'}">${isAccountClosed(a)?'Closed':'Active'}</span></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>` : `<div class="empty-state"><div class="display">No accounts yet</div><div style="font-size:12.5px;">Use "+ New Account" to get started.</div></div>`}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Business Partners</h3><span style="font-size:12px;color:var(--text-soft);">${partners.length} total</span></div>
+      ${partners.length? partners.slice(0,5).map(p=>`
+        <div class="partner-item" onclick="openPartner('${p.id}')">
+          <div><div class="partner-name">${escapeHtml(p.name)}</div><div class="partner-meta">${escapeHtml(p.contact||'')}</div></div>
+          ${accs.filter(a=>a.partner===p.name).length>0 ? `<div class="partner-count">${accs.filter(a=>a.partner===p.name).length} accounts</div>` : ''}
+        </div>
+      `).join('') : `<div class="empty-state" style="padding:20px;"><div style="font-size:12.5px;">No business partners added yet.</div></div>`}
+    </div>
+  `;
+}
+
+function showPartners(){
+  currentView='partners'; selectedAccountId=null; selectedPartnerId=null;
+  closeAllOverlays();
+  setActiveDrawerItem('drawer_partners');
+  document.getElementById('topTitle').textContent='Business Partners';
+  document.getElementById('topSub').textContent='References and partners who bring in customers';
+  renderKhataList();
+
+  const partners = getVisiblePartners();
+  const accs = getVisibleAccounts();
+  const combined = partnerCombinedTotals();
+
+  document.getElementById('content').innerHTML = `
+    <div class="back-link" onclick="guardNavigation(showDashboard)">&larr; Back to Dashboard</div>
+    <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);">
+      <div class="stat-card"><div class="stat-label">Total Investment (All Partners)</div><div class="stat-value good">Rs ${numFmt(combined.investment)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Withdraw (All Partners)</div><div class="stat-value accent">Rs ${numFmt(combined.withdraw)}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>All Partners</h3>
+        <button class="small-btn" onclick="openPartnerModal()">+ New Partner</button>
+      </div>
+      ${partners.length ? partners.map(p=>{
+        const t = partnerTotals(p);
+        return `
+        <div class="partner-item" onclick="openPartner('${p.id}')">
+          <div>
+            <div class="partner-name">${escapeHtml(p.name)}</div>
+            <div class="partner-meta">${escapeHtml(p.contact||'—')} ${p.note? ' · '+escapeHtml(p.note):''} · Balance: Rs ${numFmt(t.balance)}</div>
+          </div>
+          ${accs.filter(a=>a.partner===p.name).length>0 ? `<div class="partner-count">${accs.filter(a=>a.partner===p.name).length} accounts</div>` : ''}
+        </div>`;
+      }).join('') : `<div class="empty-state"><div class="display">No partners</div><div style="font-size:12.5px;">Add business partners / references to track which accounts came through them.</div></div>`}
+    </div>
+  `;
+}
+
+function openPartner(id){
+  currentView='partnerDetail'; selectedPartnerId=id;
+  closeAllOverlays();
+  setActiveDrawerItem('drawer_partners');
+  const p = getPartners().find(x=>x.id===id);
+  if(!p) return;
+  // Backfill a stable id on any older transactions so each row can be
+  // targeted individually for deletion.
+  let backfilled = false;
+  (p.transactions||[]).forEach(tx=>{
+    if(!tx.id){ tx.id = 'txn_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); backfilled = true; }
+  });
+  if(backfilled){
+    const all = getPartners();
+    const match = all.find(x=>x.id===id);
+    if(match) match.transactions = p.transactions;
+    setPartners(all);
+  }
+  const t = partnerTotals(p);
+  const txns = [...(p.transactions||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  document.getElementById('topTitle').textContent = p.name;
+  document.getElementById('topSub').textContent = 'Business Partner Ledger';
+
+  document.getElementById('content').innerHTML = `
+    <div class="back-link" onclick="guardNavigation(showPartners)">&larr; Back to Business Partners</div>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card"><div class="stat-label">Total Investment</div><div class="stat-value good">Rs ${numFmt(t.investment)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Withdrawn</div><div class="stat-value accent">Rs ${numFmt(t.withdraw)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net Balance</div><div class="stat-value">Rs ${numFmt(t.balance)}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Contact Detail</h3>
+        <div style="display:flex;gap:8px;">
+          <button class="small-btn" onclick="openTxnModal('${p.id}')">+ Add Transaction</button>
+          <button class="small-btn danger" onclick="deletePartner('${p.id}')">Delete Partner</button>
+        </div>
+      </div>
+      <div class="info-row"><span>Contact No</span><span>${escapeHtml(p.contact||'-')}</span></div>
+      <div class="info-row"><span>Note</span><span>${escapeHtml(p.note||'-')}</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Transaction History</h3></div>
+      ${txns.length? `
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Note</th><th style="text-align:right;">Amount</th><th></th></tr></thead>
+        <tbody>
+        ${txns.map(tx=>`
+          <tr class="txn-row type-${tx.type}">
+            <td class="mono">${tx.date||'-'}</td>
+            <td><span class="txn-type-badge ${tx.type}">${tx.type==='investment'?'Investment':'Withdraw'}</span></td>
+            <td>${escapeHtml(tx.note||'-')}</td>
+            <td class="mono" style="text-align:right;">${tx.type==='investment'?'+':'-'} Rs ${numFmt(tx.amount)}</td>
+            <td style="text-align:right;"><button class="mini-btn unpaid-btn" onclick="deleteTxn('${p.id}','${tx.id}')">Delete</button></td>
+          </tr>
+        `).join('')}
+        </tbody>
+      </table>` : `<div class="empty-state"><div class="display">No transactions</div><div style="font-size:12.5px;">Add an investment or withdraw entry above.</div></div>`}
+    </div>
+  `;
+}
+async function deleteTxn(partnerId, txnId){
+  const ok = await showConfirm('This will remove the transaction, and its amount will be reversed from your Collected/Outstanding totals.', {title:'Delete this transaction?', yesLabel:'Yes, Delete', danger:true});
+  if(!ok) return;
+  const partners = getPartners();
+  const p = partners.find(x=>x.id===partnerId);
+  if(p){
+    p.transactions = (p.transactions||[]).filter(tx=>tx.id!==txnId);
+    setPartners(partners);
+  }
+  openPartner(partnerId);
+  renderKhataList();
+}
+
+async function deletePartner(id){
+  const ok = await showConfirm('They will be removed from your lists, but their Investment/Withdraw amounts will still be included in your totals.', {title:'Delete this business partner?', yesLabel:'Yes, Delete', danger:true});
+  if(!ok) return;
+  let partners = getPartners();
+  const p = partners.find(x=>x.id===id);
+  if(p) p.deleted = true;
+  setPartners(partners);
+  refreshPartnerOptions();
+  showPartners();
+}
+
+/* ============ PARTNER TRANSACTION MODAL ============ */
+let txnPartnerId = null;
+function openTxnModal(partnerId){
+  txnPartnerId = partnerId;
+  document.getElementById('t_type').value='investment';
+  document.getElementById('txnTypeLabel').textContent='Investment';
+  document.querySelectorAll('#txnTypeOptions .custom-select-option').forEach(o=>o.classList.toggle('selected', o.dataset.value==='investment'));
+  document.getElementById('txnTypeSelect').classList.remove('open');
+  document.getElementById('t_amount').value='';
+  document.getElementById('t_date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('t_note').value='';
+  document.getElementById('txnModalOverlay').classList.add('active');
+}
+function closeTxnModal(){ document.getElementById('txnModalOverlay').classList.remove('active'); }
+function toggleCustomSelect(id){
+  document.getElementById(id+'Select').classList.toggle('open');
+}
+function chooseTxnType(value, label){
+  document.getElementById('t_type').value = value;
+  document.getElementById('txnTypeLabel').textContent = label;
+  document.querySelectorAll('#txnTypeOptions .custom-select-option').forEach(o=>o.classList.toggle('selected', o.dataset.value===value));
+  document.getElementById('txnTypeSelect').classList.remove('open');
+}
+document.addEventListener('click', (e)=>{
+  document.querySelectorAll('.custom-select.open').forEach(cs=>{
+    if(!cs.contains(e.target)) cs.classList.remove('open');
+  });
+});
+async function saveTxn(){
+  const amount = Number(document.getElementById('t_amount').value||0);
+  if(amount<=0){ await showAlert('Enter a valid amount.'); return; }
+  let partners = getPartners();
+  const p = partners.find(x=>x.id===txnPartnerId);
+  if(!p) return;
+  p.transactions = p.transactions || [];
+  p.transactions.push({
+    id: 'txn_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+    type: document.getElementById('t_type').value,
+    amount,
+    date: document.getElementById('t_date').value || new Date().toISOString().slice(0,10),
+    note: document.getElementById('t_note').value.trim()
+  });
+  setPartners(partners);
+  closeTxnModal();
+  openPartner(txnPartnerId);
+}
+
+/* ============ ACCOUNT DETAIL ============ */
+function openAccount(id, _internalRerender){
+  currentView='account'; selectedAccountId=id;
+  closeAllOverlays();
+  setActiveDrawerItem(null);
+  const acc = getAccounts().find(a=>a.id===id);
+  if(!acc) return;
+  if(!_internalRerender){
+    // Fresh visit to this account — reset the leave-guard and snapshot its
+    // installments exactly as saved right now, so "Unsave" later can
+    // restore precisely this state.
+    accountDirty = false;
+    changedFieldsSet = new Set();
+    accountSnapshot = JSON.parse(JSON.stringify(acc.installments));
+    accountSnapshotId = id;
+  }
+  renderKhataList();
+  const closed = isAccountClosed(acc);
+  const balance = accountBalance(acc);
+  const received = accountReceived(acc);
+
+  document.getElementById('topTitle').textContent = acc.name;
+  document.getElementById('topSub').textContent = `Account #${acc.accno} · ${acc.product||''}`;
+
+  document.getElementById('content').innerHTML = `
+    <div class="back-link" onclick="guardNavigation(showDashboard)">&larr; Back to Dashboard</div>
+    <div class="detail-grid">
+      <div class="panel">
+        <div class="panel-head"><h3>Installment Plan</h3>
+          <div style="display:flex;gap:8px;">
+            <span class="status-pill ${closed?'paid':'due'}">${closed?'Closed':'Active'}</span>
+            ${!closed? `<button class="small-btn" onclick="markClosed('${acc.id}')">Mark Closed</button>`:''}
+            <button class="small-btn danger" onclick="deleteAccount('${acc.id}')">Delete</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Due Date</th><th>Amount Due</th><th>Received</th><th>Receipt Date</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+          ${acc.installments.map((inst,idx)=>{
+            const paid = (inst.amountReceived||0) >= inst.amountDue;
+            const overdue = !paid && inst.dueDate && new Date(inst.dueDate) < new Date() && !closed;
+            return `
+            <tr class="${paid?'paid-row':''}">
+              <td>${idx+1}</td>
+              <td><input class="pay-date" type="date" id="ddate_${idx}" value="${inst.dueDate||''}" onchange="updateDueDateInline('${acc.id}',${idx})"></td>
+              <td>${paid? `<span class="mono">${numFmt(inst.amountDue)}</span>` : `<input class="pay-input" type="number" id="due_${idx}" value="${inst.amountDue}" onchange="updateAmountDueInline('${acc.id}',${idx})">`}</td>
+              <td>${paid? `<span class="mono">${numFmt(inst.amountReceived)}</span>` : `<input class="pay-input" type="number" id="recv_${idx}" value="${(inst.amountReceived||0)>0 ? inst.amountReceived : inst.amountDue}">`}</td>
+              <td>${paid? (inst.receiptDate||'-') : `<input class="pay-date" type="date" id="rdate_${idx}" value="${inst.receiptDate || new Date().toISOString().slice(0,10)}">`}</td>
+              <td><span class="status-pill ${paid?'paid':(overdue?'overdue':'due')}">${paid?'Paid':(overdue?'Overdue':'Due')}</span></td>
+              <td>${paid? `<button class="mini-btn unpaid-btn" onclick="markUnpaid('${acc.id}',${idx})">Unpaid</button>` : `<button class="mini-btn pay-save-btn" onclick="recordPayment('${acc.id}',${idx})">Save</button>`}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="panel">
+          <h3 style="font-size:15.5px;margin-bottom:12px;">Customer Detail</h3>
+          <div class="info-row stacked"><span>Care Of (C/O)</span><span>${escapeHtml(acc.careof||'-')}</span></div>
+          <div class="info-row stacked"><span>${acc.relationKind==='husband' ? "Husband's Name" : acc.relationKind==='others' ? `${escapeHtml(acc.relationCustom||'Relation')}'s Name` : "Father's Name"}</span><span>${escapeHtml(acc.father||'-')}</span></div>
+          <div class="info-row"><span>ID Card No</span><span>${escapeHtml(acc.idcard||'-')}</span></div>
+          <div class="info-row"><span>Contact No</span><span>${escapeHtml(acc.contact||'-')}</span></div>
+          <div class="info-row stacked"><span>Address</span><span>${escapeHtml(acc.address||'-')}</span></div>
+          <div class="info-row"><span>Date Opened</span><span>${acc.date||'-'}</span></div>
+        </div>
+        <div class="panel">
+          <h3 style="font-size:15.5px;margin-bottom:12px;">Leasing Detail</h3>
+          <div class="info-row"><span>Product</span><span>${escapeHtml(acc.product||'-')}</span></div>
+          <div class="fin-grid">
+            <div class="fin-box"><div class="lbl">Total Amount</div><div class="val">Rs ${numFmt(acc.total)}</div></div>
+            <div class="fin-box"><div class="lbl">Down Payment</div><div class="val">Rs ${numFmt(acc.downPayment)}</div></div>
+            <div class="fin-box good"><div class="lbl">Received So Far</div><div class="val">Rs ${numFmt(received)}</div></div>
+            <div class="fin-box warn"><div class="lbl">Balance Due</div><div class="val">Rs ${numFmt(balance)}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function updateDueDateInline(accId, idx){
+  const accs = getAccounts();
+  const acc = accs.find(a=>a.id===accId);
+  const ddateEl = document.getElementById('ddate_'+idx);
+  acc.installments[idx].dueDate = ddateEl.value;
+  setAccounts(accs);
+  openAccount(accId, true);
+  renderKhataList();
+  markFieldDirty('Due Date');
+}
+function updateAmountDueInline(accId, idx){
+  const accs = getAccounts();
+  const acc = accs.find(a=>a.id===accId);
+  const dueEl = document.getElementById('due_'+idx);
+  // Saved as-typed, whatever the value — no validation against the overall
+  // total or other installments, so custom/irregular installment plans
+  // (bigger or smaller amounts on any installment, including the last one)
+  // can be set freely.
+  acc.installments[idx].amountDue = Number(dueEl.value||0);
+  setAccounts(accs);
+  openAccount(accId, true);
+  renderKhataList();
+  markFieldDirty('Amount Due');
+}
+async function recordPayment(accId, idx){
+  const recvEl = document.getElementById('recv_'+idx);
+  const dateEl = document.getElementById('rdate_'+idx);
+  const amt = Number(recvEl.value||0);
+  const rdate = dateEl.value || null;
+  const ok = await showConfirm(`Received: Rs ${numFmt(amt)}\nReceipt Date: ${rdate||'—'}`, {title:'Save this payment?', yesLabel:'Yes, Save'});
+  if(!ok) return;
+  const accs = getAccounts();
+  const acc = accs.find(a=>a.id===accId);
+  acc.installments[idx].amountReceived = amt;
+  acc.installments[idx].receiptDate = amt>0 ? (rdate || new Date().toISOString().slice(0,10)) : rdate;
+  setAccounts(accs);
+  openAccount(accId);
+  renderKhataList();
+}
+async function markUnpaid(accId, idx){
+  const ok = await showConfirm('This will clear the received amount and receipt date, and it will show as Due again.', {title:'Mark this installment as Unpaid?', yesLabel:'Yes, Mark Unpaid', danger:true});
+  if(!ok) return;
+  const accs = getAccounts();
+  const acc = accs.find(a=>a.id===accId);
+  acc.installments[idx].amountReceived = 0;
+  acc.installments[idx].receiptDate = null;
+  setAccounts(accs);
+  openAccount(accId);
+  renderKhataList();
+}
+function markClosed(accId){
+  const accs = getAccounts();
+  const acc = accs.find(a=>a.id===accId);
+  acc.installments.forEach(i=> i.amountReceived = i.amountDue);
+  setAccounts(accs);
+  openAccount(accId);
+  renderKhataList();
+}
+async function deleteAccount(accId){
+  const ok = await showConfirm('It will be removed from your lists, but its payments will still be included in your Collected/Outstanding totals.', {title:'Delete this account?', yesLabel:'Yes, Delete', danger:true});
+  if(!ok) return;
+  let accs = getAccounts();
+  const acc = accs.find(a=>a.id===accId);
+  if(acc) acc.deleted = true;
+  setAccounts(accs);
+  showDashboard();
+}
+
+/* ============ ACCOUNT MODAL ============ */
+function openAccountModal(){
+  const accs = getAccounts();
+  document.getElementById('f_accno').value = String(accs.length+1).padStart(2,'0');
+  document.getElementById('f_date').value = new Date().toISOString().slice(0,10);
+  ['f_name','f_careof','f_relationcustom','f_relationname','f_idcard','f_contact','f_address','f_product'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_months').value = 12;
+  document.getElementById('f_total').value='';
+  document.getElementById('f_down').value='';
+  document.getElementById('f_balance').value='';
+  document.getElementById('f_relationkind').value='';
+  document.getElementById('relationNameLabel').textContent = "Father's / Husband's Name";
+  document.getElementById('f_relationcustom').classList.add('hidden');
+  document.querySelectorAll('.rel-toggle-btn').forEach(b=>b.classList.remove('selected'));
+  refreshNameOptions('careof');
+  refreshNameOptions('');
+  document.getElementById('accountModalOverlay').classList.add('active');
+}
+function chooseRelationKind(kind){
+  document.getElementById('f_relationkind').value = kind;
+  document.getElementById('f_relationcustom').classList.toggle('hidden', kind!=='others');
+  if(kind==='others'){
+    document.getElementById('relationNameLabel').textContent = 'Relation';
+  } else {
+    document.getElementById('relationNameLabel').textContent = kind==='husband' ? "Husband's Name" : "Father's Name";
+  }
+  document.querySelectorAll('.rel-toggle-btn').forEach(b=>b.classList.toggle('selected', b.dataset.value===kind));
+  refreshNameOptions(kind);
+}
+function refreshNameOptions(kind){
+  const accs = getAccounts();
+  if(kind==='careof'){
+    const names = [...new Set(accs.map(a=>a.careof).filter(Boolean))].sort();
+    document.getElementById('careofOptions').innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+    return;
+  }
+  const pool = kind ? accs.filter(a=>a.relationKind===kind).map(a=>a.father) : accs.map(a=>a.father);
+  const names = [...new Set(pool.filter(Boolean))].sort();
+  document.getElementById('relationOptions').innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+function closeAccountModal(){ document.getElementById('accountModalOverlay').classList.remove('active'); }
+function recalcInstallment(){
+  const total = Number(document.getElementById('f_total').value||0);
+  const down = Number(document.getElementById('f_down').value||0);
+  document.getElementById('f_balance').value = Math.max(total-down,0);
+}
+function refreshPartnerOptions(){
+  if(!currentUser) return;
+  const dl = document.getElementById('partnerOptions');
+  if(!dl) return;
+  dl.innerHTML = getVisiblePartners().map(p=>`<option value="${escapeHtml(p.name)}">`).join('');
+}
+async function saveAccount(){
+  const name = document.getElementById('f_name').value.trim();
+  const total = Number(document.getElementById('f_total').value||0);
+  const down = Number(document.getElementById('f_down').value||0);
+  const months = Math.max(Number(document.getElementById('f_months').value||1),1);
+  const startDate = document.getElementById('f_date').value || new Date().toISOString().slice(0,10);
+  if(!name || !total){ await showAlert('Customer Name and Total Amount are required.'); return; }
+
+  const balance = Math.max(total-down,0);
+  const per = Math.round(balance/months);
+  let installments = [];
+  let start = new Date(startDate);
+  for(let i=0;i<months;i++){
+    let d = new Date(start);
+    d.setMonth(d.getMonth()+i+1);
+    let amt = (i===months-1) ? (balance - per*(months-1)) : per;
+    installments.push({dueDate:d.toISOString().slice(0,10), amountDue:amt, amountReceived:0, receiptDate:null});
+  }
+
+  let allPartners = getPartners();
+  const eligiblePartners = allPartners.filter(p=>!p.deleted);
+
+  const careofVal = document.getElementById('f_careof').value.trim();
+  const relationKind = document.getElementById('f_relationkind').value;
+  const relationName = document.getElementById('f_relationname').value.trim();
+  const relationCustom = document.getElementById('f_relationcustom').value.trim();
+
+  const acc = {
+    id: 'acc_'+Date.now(),
+    createdAt: Date.now(),
+    accno: document.getElementById('f_accno').value.trim() || String(getAccounts().length+1),
+    date: startDate,
+    name,
+    careof: careofVal,
+    father: relationName,
+    relationKind: relationName ? (relationKind || 'father') : '',
+    relationCustom: relationKind==='others' ? relationCustom : '',
+    idcard: document.getElementById('f_idcard').value.trim(),
+    contact: document.getElementById('f_contact').value.trim(),
+    address: document.getElementById('f_address').value.trim(),
+    product: document.getElementById('f_product').value.trim(),
+    total, downPayment: down,
+    installments
+  };
+
+  // Total Amount of the new account is funded from the partner investment pool —
+  // split it equally across all ACTIVE partners and record it as a Withdraw for each.
+  // (Deleted partners are skipped, but their existing history is left untouched.)
+  if(eligiblePartners.length > 0 && total > 0){
+    const share = Math.round((total / eligiblePartners.length) * 100) / 100;
+    eligiblePartners.forEach(p=>{
+      p.transactions = p.transactions || [];
+      p.transactions.push({
+        type:'withdraw',
+        amount: share,
+        date: startDate,
+        note: `Auto-deducted: funded Account #${acc.accno} (${name})`
+      });
+    });
+  }
+  setPartners(allPartners);
+
+  let accs = getAccounts();
+  accs.push(acc);
+  setAccounts(accs);
+  closeAccountModal();
+  refreshPartnerOptions();
+  openAccount(acc.id);
+}
+
+/* ============ PARTNER MODAL ============ */
+function openPartnerModal(){
+  document.getElementById('p_name').value='';
+  document.getElementById('p_contact').value='';
+  document.getElementById('p_note').value='';
+  document.getElementById('partnerModalOverlay').classList.add('active');
+}
+function closePartnerModal(){ document.getElementById('partnerModalOverlay').classList.remove('active'); }
+async function savePartner(){
+  const name = document.getElementById('p_name').value.trim();
+  if(!name){ await showAlert('Enter the partner name.'); return; }
+  let partners = getPartners();
+  partners.push({
+    id:'p_'+Date.now(),
+    name,
+    contact: document.getElementById('p_contact').value.trim(),
+    note: document.getElementById('p_note').value.trim(),
+    transactions: []
+  });
+  setPartners(partners);
+  closePartnerModal();
+  refreshPartnerOptions();
+  showPartners();
+}
+
+/* ============ INIT ============ */
+(async function init(){
+  const sessionUser = DB.session();
+  if(sessionUser){
+    await bootApp(sessionUser);
+    return;
+  }
+  document.getElementById('authScreen').style.display='flex';
+  prefillLoginUsername();
+})();
+</script>
+</body>
+</html>
