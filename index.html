@@ -99,6 +99,18 @@
   }
   .field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(168,92,50,0.14);}
 
+  /* password show/hide eye toggle */
+  .password-wrap{position:relative;}
+  .password-wrap input{padding-right:42px;}
+  .pw-eye-btn{
+    position:absolute;top:50%;right:4px;transform:translateY(-50%);
+    width:32px;height:32px;border:none;background:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;border-radius:6px;
+    color:var(--text-soft);transition:color .15s ease, background .15s ease;
+  }
+  .pw-eye-btn:hover{color:var(--accent);background:var(--tab);}
+  .pw-eye-btn svg{width:18px;height:18px;}
+
   /* stylish custom dropdown (replaces native <select> popups) */
   .custom-select{position:relative;}
   .custom-select-trigger{
@@ -530,7 +542,12 @@
         <div class="auth-error" id="loginError"></div>
         <form autocomplete="on" onsubmit="event.preventDefault(); handleLogin();">
           <div class="field"><label>Username</label><input id="loginUser" name="username" autocomplete="username" placeholder="e.g. usman.wain"></div>
-          <div class="field"><label>Password</label><input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+          <div class="field"><label>Password</label>
+            <div class="password-wrap">
+              <input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="••••••••">
+              <button type="button" class="pw-eye-btn" onclick="togglePasswordVisibility('loginPass', this)" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
           <button class="btn btn-primary" type="submit">Sign in</button>
         </form>
         <div class="auth-switch">New here? <a onclick="toggleAuth('signup')">Create an account</a></div>
@@ -542,7 +559,12 @@
         <form autocomplete="on" onsubmit="event.preventDefault(); handleSignup();">
           <div class="field"><label>Full name</label><input id="signupName" name="name" autocomplete="name" placeholder="e.g. Usman Wain"></div>
           <div class="field"><label>Username</label><input id="signupUser" name="username" autocomplete="username" placeholder="Choose a username"></div>
-          <div class="field"><label>Password</label><input id="signupPass" name="new-password" type="password" autocomplete="new-password" placeholder="Choose a password"></div>
+          <div class="field"><label>Password</label>
+            <div class="password-wrap">
+              <input id="signupPass" name="new-password" type="password" autocomplete="new-password" placeholder="Choose a password">
+              <button type="button" class="pw-eye-btn" onclick="togglePasswordVisibility('signupPass', this)" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
           <button class="btn btn-primary" type="submit">Create account</button>
         </form>
         <div class="auth-switch">Already have an account? <a onclick="toggleAuth('login')">Sign in</a></div>
@@ -655,11 +677,17 @@
     <div id="asStepForm" class="hidden">
       <div class="field">
         <label id="asFormLabel">New Password</label>
-        <input id="as_new_value" type="password" autocomplete="new-password">
+        <div class="password-wrap">
+          <input id="as_new_value" type="password" autocomplete="new-password">
+          <button type="button" class="pw-eye-btn" id="asNewEyeBtn" onclick="togglePasswordVisibility('as_new_value', this)" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
       </div>
       <div class="field hidden" id="asConfirmWrap">
         <label id="asConfirmLabel">Confirm Password</label>
-        <input id="as_confirm_value" type="password" autocomplete="new-password">
+        <div class="password-wrap">
+          <input id="as_confirm_value" type="password" autocomplete="new-password">
+          <button type="button" class="pw-eye-btn" id="asConfirmEyeBtn" onclick="togglePasswordVisibility('as_confirm_value', this)" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
       </div>
       <div class="auth-error" id="asFormError"></div>
       <div class="modal-actions">
@@ -891,6 +919,17 @@ let selectedPartnerId = null;
 let currentView = 'dashboard';
 
 /* ============ AUTH ============ */
+const EYE_OPEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_CLOSED_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.6 19.6 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.7 19.7 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function togglePasswordVisibility(inputId, btn){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  const nowShowing = input.type === 'text';
+  input.type = nowShowing ? 'password' : 'text';
+  btn.innerHTML = nowShowing ? EYE_OPEN_SVG : EYE_CLOSED_SVG;
+  btn.setAttribute('aria-label', nowShowing ? 'Show password' : 'Hide password');
+}
+
 function toggleAuth(which){
   document.getElementById('loginForm').classList.toggle('hidden', which==='signup');
   document.getElementById('signupForm').classList.toggle('hidden', which==='login');
@@ -947,7 +986,14 @@ function handleLogout(){
   document.getElementById('appScreen').classList.remove('active');
   document.getElementById('authScreen').style.display='flex';
   toggleAuth('login');
-  document.getElementById('loginPass').value='';
+  const loginPassEl = document.getElementById('loginPass');
+  loginPassEl.value='';
+  loginPassEl.type='password';
+  const loginEyeBtn = loginPassEl.nextElementSibling;
+  if(loginEyeBtn && loginEyeBtn.classList.contains('pw-eye-btn')){
+    loginEyeBtn.innerHTML = EYE_OPEN_SVG;
+    loginEyeBtn.setAttribute('aria-label','Show password');
+  }
   prefillLoginUsername();
 }
 
@@ -990,21 +1036,29 @@ function showChangeForm(action){
   const confirmWrap = document.getElementById('asConfirmWrap');
   const confirmLabel = document.getElementById('asConfirmLabel');
   const confirmInput = document.getElementById('as_confirm_value');
+  const newEyeBtn = document.getElementById('asNewEyeBtn');
+  const confirmEyeBtn = document.getElementById('asConfirmEyeBtn');
   confirmWrap.classList.remove('hidden');
+  // Reset both eye toggles back to the hidden/closed state whenever this form opens.
+  newEyeBtn.innerHTML = EYE_OPEN_SVG; newEyeBtn.setAttribute('aria-label','Show password');
+  confirmEyeBtn.innerHTML = EYE_OPEN_SVG; confirmEyeBtn.setAttribute('aria-label','Show password');
   if(action==='password'){
     label.textContent='New Password'; input.type='password'; input.autocomplete='new-password';
     confirmLabel.textContent='Confirm Password'; confirmInput.type='password'; confirmInput.autocomplete='new-password';
     document.getElementById('asSubtitle').textContent='Change Password';
+    newEyeBtn.style.display='flex'; confirmEyeBtn.style.display='flex';
   } else if(action==='username'){
     label.textContent='New Username'; input.type='text'; input.autocomplete='username';
     confirmLabel.textContent='Confirm Username'; confirmInput.type='text'; confirmInput.autocomplete='username';
     input.value = currentUser.username;
     document.getElementById('asSubtitle').textContent='Change Username';
+    newEyeBtn.style.display='none'; confirmEyeBtn.style.display='none';
   } else {
     label.textContent='New Name'; input.type='text'; input.autocomplete='name';
     confirmLabel.textContent='Confirm Name'; confirmInput.type='text'; confirmInput.autocomplete='name';
     input.value = currentUser.name || '';
     document.getElementById('asSubtitle').textContent='Change Name';
+    newEyeBtn.style.display='none'; confirmEyeBtn.style.display='none';
   }
 }
 function backToChoose(){
@@ -1913,6 +1967,21 @@ async function savePartner(){
 }
 
 /* ============ INIT ============ */
+
+// Log out automatically only when the tab/window is actually closed (or the
+// browser itself is closed) — not on minimizing, switching tabs, or any
+// click within the app. We do this by clearing the "remember me" session
+// flag right as the page is unloading, so the NEXT time this page is
+// opened, it shows the sign-in screen instead of resuming automatically.
+// Minimizing a window never fires these events, so it has no effect.
+function clearSessionOnClose(){
+  if(currentUser){
+    DB.clearSession();
+  }
+}
+window.addEventListener('pagehide', clearSessionOnClose);
+window.addEventListener('beforeunload', clearSessionOnClose);
+
 (async function init(){
   const sessionUser = DB.session();
   if(sessionUser){
