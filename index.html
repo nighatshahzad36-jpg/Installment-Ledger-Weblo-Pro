@@ -491,6 +491,16 @@
     .content{padding:20px 16px 50px;}
     .topbar{padding:14px 16px;}
   }
+  .weblo-badge{
+    position:fixed;bottom:16px;right:16px;z-index:70;
+    display:flex;align-items:center;gap:7px;
+    background:var(--brown-dark);color:#fff;text-decoration:none;
+    padding:9px 16px;border-radius:24px;font-size:12px;font-weight:600;
+    box-shadow:0 6px 18px rgba(30,35,82,0.28);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .weblo-badge:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(30,35,82,0.34);}
+  .weblo-badge .weblo-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -537,7 +547,7 @@
         </form>
         <div class="auth-switch">Already have an account? <a onclick="toggleAuth('login')">Sign in</a></div>
       </div>
-      <div class="sync-note">Data is currently saved on this device/browser only.</div>
+      <div class="sync-note">Your data is saved online and stays in sync across devices — sign in anywhere with the same username.</div>
     </div>
   </div>
 </div>
@@ -1913,5 +1923,8 @@ async function savePartner(){
   prefillLoginUsername();
 })();
 </script>
+<a class="weblo-badge" href="https://weblopro.netlify.app" target="_blank" rel="noopener">
+  <span class="weblo-dot"></span>Powered By Weblo Pro &bull; Muzamil Shahzad
+</a>
 </body>
 </html>
