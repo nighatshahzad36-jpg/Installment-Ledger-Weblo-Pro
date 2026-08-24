@@ -504,7 +504,7 @@
     .topbar{padding:14px 16px;}
   }
   .weblo-badge{
-    position:fixed;bottom:16px;right:16px;z-index:70;
+    position:fixed;bottom:16px;right:16px;z-index:90;
     display:flex;align-items:center;gap:7px;
     background:var(--brown-dark);color:#fff;text-decoration:none;
     padding:9px 16px;border-radius:24px;font-size:12px;font-weight:600;
@@ -520,6 +520,14 @@
     align-items:center;justify-content:center;
   }
   #gateScreen.active{display:flex;}
+  .gate-box{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .gate-go-btn{
+    background:var(--accent);color:#fff;border:none;border-radius:22px;
+    padding:9px 28px;font-size:13px;font-weight:700;letter-spacing:.04em;
+    cursor:pointer;transition:background .15s ease, transform .12s ease;
+  }
+  .gate-go-btn:hover{background:var(--accent-hover);}
+  .gate-go-btn:active{transform:scale(.96);}
   #gatePasswordInput{
     border:none;border-bottom:2px solid var(--border);background:transparent;
     text-align:center;font-size:16px;color:var(--text);padding:8px 4px;
@@ -542,7 +550,10 @@
 
 <!-- ============ FIRST-VISIT DEVICE GATE ============ -->
 <div id="gateScreen">
-  <input id="gatePasswordInput" type="password" placeholder="Password" autocomplete="off">
+  <div class="gate-box">
+    <button type="button" id="gateGoBtn" class="gate-go-btn">GO</button>
+    <input id="gatePasswordInput" type="password" placeholder="Password" autocomplete="off">
+  </div>
 </div>
 
 <!-- ============ AUTH ============ -->
@@ -2006,8 +2017,7 @@ function showGate(){
   const input = document.getElementById('gatePasswordInput');
   input.value='';
   input.focus();
-  input.onkeydown = (e)=>{
-    if(e.key !== 'Enter') return;
+  function trySubmitGate(){
     if(input.value === GATE_PASSWORD){
       localStorage.setItem(GATE_KEY, '1');
       document.getElementById('gateScreen').classList.remove('active');
@@ -2017,8 +2027,13 @@ function showGate(){
       void input.offsetWidth;
       input.classList.add('gate-shake');
       input.value='';
+      input.focus();
     }
+  }
+  input.onkeydown = (e)=>{
+    if(e.key === 'Enter') trySubmitGate();
   };
+  document.getElementById('gateGoBtn').onclick = trySubmitGate;
 }
 function startAuthFlow(){
   document.getElementById('authScreen').style.display='flex';
