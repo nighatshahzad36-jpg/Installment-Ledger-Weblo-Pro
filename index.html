@@ -40,7 +40,7 @@
 
   /* ---------- AUTH: login = centered card, signup = full-screen split ---------- */
   #authScreen{
-    height:100vh;width:100vw;display:flex;overflow:hidden;
+    height:100vh;width:100vw;display:none;overflow:hidden;
     background:radial-gradient(circle at 15% 20%, rgba(167,92,50,0.06), transparent 40%),
       radial-gradient(circle at 85% 80%, rgba(122,75,39,0.08), transparent 45%), var(--bg);
   }
@@ -513,9 +513,37 @@
   }
   .weblo-badge:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(30,35,82,0.34);}
   .weblo-badge .weblo-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;}
+
+  /* first-visit device gate */
+  #gateScreen{
+    display:none;position:fixed;inset:0;z-index:80;background:var(--paper);
+    align-items:center;justify-content:center;
+  }
+  #gateScreen.active{display:flex;}
+  #gatePasswordInput{
+    border:none;border-bottom:2px solid var(--border);background:transparent;
+    text-align:center;font-size:16px;color:var(--text);padding:8px 4px;
+    width:220px;outline:none;letter-spacing:.02em;
+    transition:border-color .15s ease, transform .12s ease;
+  }
+  #gatePasswordInput:focus{border-color:var(--accent);}
+  #gatePasswordInput::placeholder{color:var(--text-soft);}
+  #gatePasswordInput.gate-shake{animation:gateShake .4s ease;border-color:var(--danger);}
+  @keyframes gateShake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-8px);}
+    40%{transform:translateX(8px);}
+    60%{transform:translateX(-6px);}
+    80%{transform:translateX(6px);}
+  }
 </style>
 </head>
 <body>
+
+<!-- ============ FIRST-VISIT DEVICE GATE ============ -->
+<div id="gateScreen">
+  <input id="gatePasswordInput" type="password" placeholder="Password" autocomplete="off">
+</div>
 
 <!-- ============ AUTH ============ -->
 <div id="authScreen">
@@ -1966,6 +1994,37 @@ async function savePartner(){
   showPartners();
 }
 
+/* ============ FIRST-VISIT DEVICE GATE ============ */
+const GATE_PASSWORD = 'muzamilshahzad';
+const GATE_KEY = 'wp_gate_passed';
+function gatePassed(){
+  return localStorage.getItem(GATE_KEY) === '1';
+}
+function showGate(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('gateScreen').classList.add('active');
+  const input = document.getElementById('gatePasswordInput');
+  input.value='';
+  input.focus();
+  input.onkeydown = (e)=>{
+    if(e.key !== 'Enter') return;
+    if(input.value === GATE_PASSWORD){
+      localStorage.setItem(GATE_KEY, '1');
+      document.getElementById('gateScreen').classList.remove('active');
+      startAuthFlow();
+    } else {
+      input.classList.remove('gate-shake');
+      void input.offsetWidth;
+      input.classList.add('gate-shake');
+      input.value='';
+    }
+  };
+}
+function startAuthFlow(){
+  document.getElementById('authScreen').style.display='flex';
+  prefillLoginUsername();
+}
+
 /* ============ INIT ============ */
 
 // Log out automatically only when the tab/window is actually closed (or the
@@ -1983,13 +2042,16 @@ window.addEventListener('pagehide', clearSessionOnClose);
 window.addEventListener('beforeunload', clearSessionOnClose);
 
 (async function init(){
+  if(!gatePassed()){
+    showGate();
+    return;
+  }
   const sessionUser = DB.session();
   if(sessionUser){
     await bootApp(sessionUser);
     return;
   }
-  document.getElementById('authScreen').style.display='flex';
-  prefillLoginUsername();
+  startAuthFlow();
 })();
 </script>
 <a class="weblo-badge" href="https://weblopro.netlify.app" target="_blank" rel="noopener">
