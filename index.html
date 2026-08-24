@@ -582,7 +582,7 @@
         <p class="auth-sub">Sign in to access your installment accounts.</p>
         <div class="auth-error" id="loginError"></div>
         <form autocomplete="on" onsubmit="event.preventDefault(); handleLogin();">
-          <div class="field"><label>Username</label><input id="loginUser" name="username" autocomplete="username" placeholder="e.g. usman.wain"></div>
+          <div class="field"><label>Username</label><input id="loginUser" name="username" autocomplete="username"></div>
           <div class="field"><label>Password</label>
             <div class="password-wrap">
               <input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="••••••••">
@@ -598,7 +598,7 @@
         <p class="auth-sub">Set up your business account to start managing ledgers.</p>
         <div class="auth-error" id="signupError"></div>
         <form autocomplete="on" onsubmit="event.preventDefault(); handleSignup();">
-          <div class="field"><label>Full name</label><input id="signupName" name="name" autocomplete="name" placeholder="e.g. Usman Wain"></div>
+          <div class="field"><label>Full name</label><input id="signupName" name="name" autocomplete="name"></div>
           <div class="field"><label>Username</label><input id="signupUser" name="username" autocomplete="username" placeholder="Choose a username"></div>
           <div class="field"><label>Password</label>
             <div class="password-wrap">
@@ -751,7 +751,7 @@
       <div class="field"><label>Account No</label><input id="f_accno"></div>
       <div class="field"><label>Date</label><input id="f_date" type="date"></div>
       <div class="field"><label>Customer Name</label><input id="f_name"></div>
-      <div class="field"><label>Care Of (C/O)</label><input id="f_careof" list="careofOptions" placeholder="e.g. Malik Javed Aura"><datalist id="careofOptions"></datalist></div>
+      <div class="field"><label>Care Of (C/O)</label><input id="f_careof" list="careofOptions"><datalist id="careofOptions"></datalist></div>
       <div class="field relation-field">
         <div class="relation-head">
           <label id="relationNameLabel">Father's / Husband's Name</label>
@@ -1842,7 +1842,9 @@ async function markUnpaid(accId, idx){
   openAccount(accId);
   renderKhataList();
 }
-function markClosed(accId){
+async function markClosed(accId){
+  const ok = await showConfirm('This will mark every remaining installment on this account as fully paid, and the account will move to Closed.', {title:'Mark this account as Closed?', yesLabel:'Yes, Mark Closed'});
+  if(!ok) return;
   const accs = getAccounts();
   const acc = accs.find(a=>a.id===accId);
   acc.installments.forEach(i=> i.amountReceived = i.amountDue);
