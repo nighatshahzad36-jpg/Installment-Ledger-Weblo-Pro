@@ -933,7 +933,7 @@ async function apiCall(action, payload={}){
   const res = await fetch(API_BASE, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ action, ...payload })
+    body: JSON.stringify({ action, token: DB.token(), ...payload })
   });
   let data = {};
   try { data = await res.json(); } catch(e){ /* ignore */ }
@@ -942,15 +942,20 @@ async function apiCall(action, payload={}){
 }
 
 /* ============ STORAGE HELPERS ============ */
-// Session + "remember my username" stay on THIS device only (that's the point
-// of them). Everything else — users, accounts, business partners — now lives
-// on the server via apiCall(), so it's the same across every device.
+// Session token, "who was last signed in", and "remember my username" stay on
+// THIS device only (that's the point of them). The session token is what
+// actually authorizes every request — everything else (users, accounts,
+// business partners) now lives on the server via apiCall(), so it's the same
+// across every device, and only reachable with a valid token.
 const DB = {
   session: () => localStorage.getItem('il_session'),
   setSession: (u) => localStorage.setItem('il_session', u),
   clearSession: () => localStorage.removeItem('il_session'),
   lastUsername: () => localStorage.getItem('il_last_username'),
   setLastUsername: (u) => localStorage.setItem('il_last_username', u),
+  token: () => localStorage.getItem('il_token'),
+  setToken: (t) => localStorage.setItem('il_token', t),
+  clearToken: () => localStorage.removeItem('il_token'),
 };
 
 let currentUser = null;
@@ -988,7 +993,8 @@ async function handleSignup(){
   const pass = document.getElementById('signupPass').value;
   if(!name || !user || !pass){ showAuthError('signupError','Please fill in all fields.'); return; }
   try{
-    await apiCall('signup', {username:user, password:pass, name});
+    const res = await apiCall('signup', {username:user, password:pass, name});
+    DB.setToken(res.token);
     DB.setSession(user);
     DB.setLastUsername(user);
     await bootApp(user);
@@ -1001,7 +1007,8 @@ async function handleLogin(){
   const pass = document.getElementById('loginPass').value;
   if(!user || !pass){ showAuthError('loginError','Please enter your username and password.'); return; }
   try{
-    await apiCall('login', {username:user, password:pass});
+    const res = await apiCall('login', {username:user, password:pass});
+    DB.setToken(res.token);
     DB.setSession(user);
     DB.setLastUsername(user);
     await bootApp(user);
@@ -1019,7 +1026,10 @@ function prefillLoginUsername(){
   }
 }
 function handleLogout(){
+  const token = DB.token();
+  if(token){ apiCall('logout', {token}).catch(()=>{}); }
   DB.clearSession();
+  DB.clearToken();
   currentUser = null;
   _accountsCache = [];
   _partnersCache = [];
@@ -1143,8 +1153,9 @@ async function bootApp(username){
     const sessRes = await apiCall('session', {username});
     currentUser = sessRes.user;
   } catch(e){
-    // Server no longer recognizes this user (e.g. cleared data) — bounce back to login.
+    // Server no longer recognizes this session (expired/cleared) — bounce back to login.
     DB.clearSession();
+    DB.clearToken();
     document.getElementById('authScreen').style.display='flex';
     prefillLoginUsername();
     return;
@@ -2066,10 +2077,12 @@ window.addEventListener('beforeunload', clearSessionOnClose);
     return;
   }
   const sessionUser = DB.session();
-  if(sessionUser){
+  if(sessionUser && DB.token()){
     await bootApp(sessionUser);
     return;
   }
+  DB.clearSession();
+  DB.clearToken();
   startAuthFlow();
 })();
 </script>
